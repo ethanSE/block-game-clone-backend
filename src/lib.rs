@@ -1,7 +1,11 @@
 mod utils;
+
+use board::Board;
+use board_state::BoardState;
 use game_state::GameState;
 use nalgebra::Vector3;
 use piece::PieceName;
+use player_state::PlayerState;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 mod board;
@@ -48,11 +52,32 @@ pub fn next_game_state(current_state_s: &str, action_s: &str) -> String {
 
 #[derive(Serialize, Deserialize, TS)]
 #[ts(export, export_to = "pkg/types/V3.ts")]
-pub struct V3(#[ts(type = "[number, number,number]")] Vector3<f32>);
+pub struct V3(#[ts(type = "[number, number,number]")] Vector3<i8>);
 
 #[wasm_bindgen]
-pub fn get_default_game_state() -> String {
-    serde_json::to_string(&GameState::default()).unwrap()
+pub fn new_two_player_four_by_five() -> String {
+    let gs: GameState = GameState {
+        player_state: PlayerState::default(),
+        board_state: BoardState {
+            pieces: Board::new_four_by_five_by_four(),
+            previewed_piece: None,
+        },
+    };
+
+    serde_json::to_string(&gs).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn new_two_player_pyramid() -> String {
+    let gs: GameState = GameState {
+        player_state: PlayerState::default(),
+        board_state: BoardState {
+            pieces: Board::new_pyramid(),
+            previewed_piece: None,
+        },
+    };
+
+    serde_json::to_string(&gs).unwrap()
 }
 
 #[derive(Serialize, Deserialize, TS)]

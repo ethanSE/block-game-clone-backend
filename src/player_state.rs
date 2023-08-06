@@ -38,7 +38,7 @@ impl PlayerState {
         self.players[self.current_player].rotate_selected_piece(rotation_axis)
     }
 
-    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
+    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<i8>) {
         self.players[self.current_player].set_selected_piece_origin(new_origin)
     }
 

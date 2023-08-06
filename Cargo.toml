@@ -1,6 +1,6 @@
 [package]
 name = "block-game-clone-backend"
-version = "0.1.9"
+version = "0.1.17"
 authors = ["Ethan Samuels-Ellingson <ethansamuelsellingson@gmail.com>"]
 edition = "2021"
 

@@ -29,7 +29,7 @@ impl PlayerHandState {
         self.selected_piece = Some(piece_name)
     }
 
-    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
+    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<i8>) {
         if let Some(selected_piece_name) = self.selected_piece {
             if let Some(a) = self.pieces.get_mut(selected_piece_name) {
                 a.set_origin(new_origin)
