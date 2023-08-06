@@ -38,11 +38,11 @@ impl GameState {
         self.board_state.clear_previewed_piece()
     }
 
-    fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
+    fn set_selected_piece_origin(&mut self, new_origin: Vector3<i8>) {
         self.player_state.set_selected_piece_origin(new_origin)
     }
 
-    fn preview_piece(&mut self, position: Vector3<f32>) {
+    fn preview_piece(&mut self, position: Vector3<i8>) {
         if let Some((current_player, piece)) = self.player_state.get_selected_piece() {
             self.board_state
                 .preview_piece(current_player, piece, position)
@@ -84,7 +84,7 @@ mod tests {
         let mut gs = GameState::default();
 
         gs.apply_action(Action::SelectPiece(PieceName::Corner));
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
         gs.apply_action(Action::PlayPreviewedPiece);
 
         let gs_str = serde_json::to_string(&gs).unwrap();

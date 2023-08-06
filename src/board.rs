@@ -2,58 +2,71 @@ use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::{
-    piece::round_vec3,
-    player::{self, Player},
-};
+use crate::player::{self, Player};
 
-#[derive(Serialize, Deserialize, Default, Debug, TS)]
+#[derive(Serialize, Deserialize, Debug, TS)]
 #[ts(export, export_to = "pkg/types/Board.ts")]
-pub struct Board(pub [[[BoardCell; 4]; 4]; 5]);
+pub struct Board(pub [[[BoardCell; 8]; 8]; 8]);
 
 impl Board {
-    pub fn update_at(&mut self, index: Vector3<f32>, value: BoardCell) {
+    fn get_mut(&mut self, index: Vector3<i8>) -> Option<&mut BoardCell> {
+        let x: usize = index.x.try_into().ok()?;
+        let y: usize = index.y.try_into().ok()?;
+        let z: usize = index.z.try_into().ok()?;
+
         if let Some(bc) = self
             .0
-            .get_mut(index.x as usize)
-            .and_then(|b| b.get_mut(index.y as usize))
-            .and_then(|c| c.get_mut(index.z as usize))
+            .get_mut(x)
+            .and_then(|b| b.get_mut(y))
+            .and_then(|c| c.get_mut(z))
         {
-            *bc = value
+            Some(bc)
+        } else {
+            None
         }
     }
 
-    pub fn get_at(&self, index: &Vector3<f32>) -> Option<&BoardCell> {
-        self.0
-            .get(index.x as usize)
-            .and_then(|b| b.get(index.y as usize))
-            .and_then(|c| c.get(index.z as usize))
+    fn get(&self, index: Vector3<i8>) -> Option<&BoardCell> {
+        let x: usize = index.x.try_into().ok()?;
+        let y: usize = index.y.try_into().ok()?;
+        let z: usize = index.z.try_into().ok()?;
+
+        if let Some(bc) = self.0.get(x).and_then(|b| b.get(y)).and_then(|c| c.get(z)) {
+            Some(bc)
+        } else {
+            None
+        }
     }
 
-    pub fn supports(&self, position: &Vector3<f32>) -> bool {
+    pub fn add_cubes(&mut self, cubes: &Vec<Cube>) {
+        for cube in cubes {
+            if let Some(bc) = self.get_mut(cube.position) {
+                *bc = BoardCell::Player(cube.player)
+            }
+        }
+    }
+
+    pub fn supports(&self, position: &Vector3<i8>) -> bool {
         let supported_by_piece = self
-            .get_at(&(*position - Vector3::<f32>::new(0.0, 1.0, 0.0)))
+            .get(*position - Vector3::<i8>::new(0, 1, 0))
             .is_some_and(|bc| *bc != BoardCell::Empty);
 
-        let is_on_ground = position.y == 0.0;
+        let is_on_ground = position.y == 0;
 
         supported_by_piece || is_on_ground
     }
 
-    fn get_adjacent_cells(&self, position: &Vector3<f32>) -> Vec<&BoardCell> {
+    fn get_adjacent_cells(&self, position: &Vector3<i8>) -> Vec<&BoardCell> {
         let positions = vec![
-            position - Vector3::<f32>::new(1.0, 0.0, 0.0),
-            position - Vector3::<f32>::new(-1.0, 0.0, 0.0),
-            position - Vector3::<f32>::new(0.0, 1.0, 0.0),
-            position - Vector3::<f32>::new(0.0, -1.0, 0.0),
-            position - Vector3::<f32>::new(0.0, 0.0, 1.0),
-            position - Vector3::<f32>::new(0.0, 0.0, -1.0),
+            position - Vector3::<i8>::new(1, 0, 0),
+            position - Vector3::<i8>::new(-1, 0, 0),
+            position - Vector3::<i8>::new(0, 1, 0),
+            position - Vector3::<i8>::new(0, -1, 0),
+            position - Vector3::<i8>::new(0, 0, 1),
+            position - Vector3::<i8>::new(0, 0, -1),
         ];
 
-        positions
-            .iter()
-            .filter_map(|p| self.get_at(&round_vec3(*p)))
-            .collect()
+        positions.iter().filter_map(|p| self.get(*p)).collect()
     }
 
     pub fn check_touches_piece(&self, mut coords: Vec<Cube>) -> Result<Vec<Cube>, Vec<Cube>> {
@@ -88,30 +101,66 @@ impl Board {
             .and(Some(player))
     }
 
-    pub fn check_in_bounds_no_collision(&self, vc: &Cube) -> Cube {
-        match self.get_at(&vc.position) {
-            Some(BoardCell::Empty) => *vc,
-            Some(BoardCell::Player(_)) => Cube {
-                player: vc.player,
-                position: vc.position,
-                error: Some(CubeError::Collision),
-            },
-            None => Cube {
-                player: vc.player,
-                position: vc.position,
-                error: Some(CubeError::OutOfBounds),
-            },
+    pub fn check_in_bounds_no_collision(&self, position: Vector3<i8>) -> Option<CubeError> {
+        match self.get(position) {
+            Some(BoardCell::Empty) => None,
+            Some(BoardCell::Player(_)) => Some(CubeError::Collision),
+            _ => Some(CubeError::OutOfBounds),
         }
+    }
+
+    fn new_board_from_2d_heights(heights_2d: Vec<Vec<usize>>) -> Self {
+        let mut board = [[[BoardCell::OutOfBounds; 8]; 8]; 8];
+        for (ix, x) in heights_2d.iter().enumerate() {
+            for (iz, ymax) in x.iter().enumerate() {
+                for y in 0..*ymax {
+                    board[ix][y][iz] = BoardCell::Empty
+                }
+            }
+        }
+
+        Self(board)
+    }
+
+    pub fn new_pyramid() -> Self {
+        let heights = vec![
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+            vec![1, 2, 2, 2, 2, 2, 2, 1],
+            vec![1, 2, 3, 3, 3, 3, 2, 1],
+            vec![1, 2, 3, 4, 4, 3, 2, 1],
+            vec![1, 2, 3, 4, 4, 3, 2, 1],
+            vec![1, 2, 3, 3, 3, 3, 2, 1],
+            vec![1, 2, 2, 2, 2, 2, 2, 1],
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+        ];
+        Self::new_board_from_2d_heights(heights)
+    }
+
+    pub fn new_four_by_five_by_four() -> Self {
+        let heights = vec![
+            vec![4, 4, 4, 4, 4],
+            vec![4, 4, 4, 4, 4],
+            vec![4, 4, 4, 4, 4],
+            vec![4, 4, 4, 4, 4],
+        ];
+        Self::new_board_from_2d_heights(heights)
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, PartialEq, TS)]
+impl Default for Board {
+    fn default() -> Self {
+        Self::new_pyramid()
+    }
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq, TS, Clone, Copy)]
 #[ts(export, export_to = "pkg/types/BoardCell.ts")]
 #[serde(tag = "type", content = "data")]
 pub enum BoardCell {
     #[default]
     Empty,
     Player(Player),
+    OutOfBounds,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, TS)]
@@ -128,6 +177,6 @@ pub enum CubeError {
 pub struct Cube {
     pub player: player::Player,
     #[ts(type = "[number,number,number]")]
-    pub position: Vector3<f32>,
+    pub position: Vector3<i8>,
     pub error: Option<CubeError>,
 }

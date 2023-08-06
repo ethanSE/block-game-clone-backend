@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::{
-    board::{Board, BoardCell, Cube, CubeError},
+    board::{Board, Cube, CubeError},
     piece::Piece,
     player::Player,
 };
@@ -16,7 +16,7 @@ pub struct BoardState {
 }
 
 impl BoardState {
-    pub fn preview_piece(&mut self, current_player: Player, piece: &Piece, position: Vector3<f32>) {
+    pub fn preview_piece(&mut self, current_player: Player, piece: &Piece, position: Vector3<i8>) {
         //build the piece from the piece and position offset
         let moved_piece = piece.get_moved_copy(position);
 
@@ -30,18 +30,21 @@ impl BoardState {
             })
             .collect();
 
-        let check_supported = |vc: Cube| {
-            if self.pieces.supports(&vc.position) || moved_piece.supports(&vc.position) {
-                vc
+        let check_inbounds_no_collision = |c: &Cube| Cube {
+            error: self.pieces.check_in_bounds_no_collision(c.position),
+            ..*c
+        };
+
+        let check_supported = |c: Cube| {
+            if self.pieces.supports(&c.position) || moved_piece.supports(&c.position) {
+                c
             } else {
                 Cube {
                     error: Some(CubeError::Unsupported),
-                    ..vc
+                    ..c
                 }
             }
         };
-
-        let check_inbounds_no_collision = |&c| self.pieces.check_in_bounds_no_collision(&c);
 
         self.previewed_piece = Some(match self.pieces.check_touches_piece(positions) {
             Ok(cubes) => cubes
@@ -54,12 +57,9 @@ impl BoardState {
     }
 
     pub fn play_selected_piece(&mut self) -> Result<(), ()> {
-        if let Some(preview_cubes) = &mut self.previewed_piece {
+        if let Some(preview_cubes) = &self.previewed_piece {
             if preview_cubes.iter().all(|c| c.error.is_none()) {
-                for piece in preview_cubes {
-                    self.pieces
-                        .update_at(piece.position, BoardCell::Player(piece.player))
-                }
+                self.pieces.add_cubes(preview_cubes);
                 self.previewed_piece = None;
                 Ok(())
             } else {
@@ -85,7 +85,7 @@ mod tests {
         let mut gs = GameState::default();
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
 
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
 
         if let Some(preview_piece) = gs.board_state.previewed_piece {
             assert!(preview_piece.iter().all(|c| c.error.is_none()));
@@ -97,7 +97,7 @@ mod tests {
         let mut gs = GameState::default();
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
 
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
 
         if let Some(preview_piece) = &gs.board_state.previewed_piece {
             assert!(preview_piece.iter().all(|c| c.error.is_none()));
@@ -107,10 +107,24 @@ mod tests {
 
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
 
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 1.0, 0.0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 1, 0))));
 
         if let Some(a) = &gs.board_state.previewed_piece {
             assert!(a.iter().all(|c| c.error.is_none()));
+        }
+    }
+
+    #[test]
+    fn collision() {
+        let mut gs = GameState::default();
+        gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        gs.apply_action(Action::PlayPreviewedPiece);
+        gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        if let Some(a) = &gs.board_state.previewed_piece {
+            println!("{:?}", a);
+            assert!(a.iter().any(|c| c.error.is_some()));
         }
     }
 }
