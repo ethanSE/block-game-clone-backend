@@ -1,5 +1,0 @@
-{
-    "rust-analyzer.linkedProjects": [
-        "./wasm_build_automation/build_automation/Cargo.toml"
-    ]
-}

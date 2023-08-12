@@ -1,9 +1,10 @@
 use std::f32::consts::PI;
 
-use crate::RotationAxis;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+use crate::ts_interop::RotationAxis;
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(export, export_to = "pkg/types/Piece.ts")]

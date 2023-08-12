@@ -1,7 +1,7 @@
 use crate::{
     hand::Hand,
     piece::{Piece, PieceName},
-    RotationAxis,
+    ts_interop::RotationAxis,
 };
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};

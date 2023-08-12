@@ -7,7 +7,7 @@ use crate::{
     piece::{Piece, PieceName},
     player::Player,
     player_hand_state::PlayerHandState,
-    RotationAxis,
+    ts_interop::RotationAxis,
 };
 
 #[derive(Serialize, Deserialize, Default, TS)]

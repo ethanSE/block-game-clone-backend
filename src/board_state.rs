@@ -4,6 +4,7 @@ use ts_rs::TS;
 
 use crate::{
     board::{Board, Cube, CubeError},
+    game_mode::GameMode,
     piece::Piece,
     player::Player,
 };
@@ -16,6 +17,13 @@ pub struct BoardState {
 }
 
 impl BoardState {
+    pub fn new(game_mode: GameMode) -> Self {
+        Self {
+            pieces: Board::new(game_mode),
+            previewed_piece: None,
+        }
+    }
+
     pub fn preview_piece(&mut self, current_player: Player, piece: &Piece, position: Vector3<i8>) {
         //build the piece from the piece and position offset
         let moved_piece = piece.get_moved_copy(position);
@@ -77,7 +85,7 @@ impl BoardState {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board_state::BoardState, game_state::GameState, piece::PieceName, Action, V3};
+    use crate::{game_state::GameState, piece::PieceName, ts_interop::V3, Action};
     use nalgebra::Vector3;
 
     #[test]

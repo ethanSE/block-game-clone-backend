@@ -2,20 +2,39 @@ use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::player::{self, Player};
+use crate::{
+    game_mode::{GameMode, TwoPlayerMap},
+    player::{self, Player},
+};
 
 #[derive(Serialize, Deserialize, Debug, TS)]
 #[ts(export, export_to = "pkg/types/Board.ts")]
-pub struct Board(pub [[[BoardCell; 8]; 8]; 8]);
+pub struct Board {
+    pub cells: [[[BoardCell; 8]; 8]; 8],
+    #[ts(type = "Array<Array<number>>")]
+    pub height_limits: Vec<Vec<usize>>,
+    #[ts(type = "[number, number, number]")]
+    pub center: Vector3<f32>,
+}
 
 impl Board {
+    pub fn new(game_mode: GameMode) -> Self {
+        match game_mode {
+            GameMode::Solitaire(_) => todo!(),
+            GameMode::TwoPlayer(TwoPlayerMap::FourByFiveByFour) => {
+                Board::new_four_by_five_by_four()
+            }
+            GameMode::TwoPlayer(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
+        }
+    }
+
     fn get_mut(&mut self, index: Vector3<i8>) -> Option<&mut BoardCell> {
         let x: usize = index.x.try_into().ok()?;
         let y: usize = index.y.try_into().ok()?;
         let z: usize = index.z.try_into().ok()?;
 
         if let Some(bc) = self
-            .0
+            .cells
             .get_mut(x)
             .and_then(|b| b.get_mut(y))
             .and_then(|c| c.get_mut(z))
@@ -31,7 +50,12 @@ impl Board {
         let y: usize = index.y.try_into().ok()?;
         let z: usize = index.z.try_into().ok()?;
 
-        if let Some(bc) = self.0.get(x).and_then(|b| b.get(y)).and_then(|c| c.get(z)) {
+        if let Some(bc) = self
+            .cells
+            .get(x)
+            .and_then(|b| b.get(y))
+            .and_then(|c| c.get(z))
+        {
             Some(bc)
         } else {
             None
@@ -95,7 +119,10 @@ impl Board {
     }
 
     fn player_has_played(&self, player: Player) -> Option<Player> {
-        let mut all_indices = self.0.iter().flat_map(|a| a.iter().flat_map(|b| b.iter()));
+        let mut all_indices = self
+            .cells
+            .iter()
+            .flat_map(|a| a.iter().flat_map(|b| b.iter()));
         all_indices
             .find(|bc| **bc == BoardCell::Player(player))
             .and(Some(player))
@@ -119,10 +146,32 @@ impl Board {
             }
         }
 
-        Self(board)
+        let mid_x = (heights_2d.len() as f32 - 1.0) / 2.0;
+
+        let mid_y = (*heights_2d
+            .iter()
+            .flatten()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap() as f32
+            - 1.0)
+            / 2.0;
+
+        let mid_z = (heights_2d
+            .iter()
+            .max_by(|a, b| a.len().cmp(&b.len()))
+            .unwrap()
+            .len() as f32
+            - 1.0)
+            / 2.0;
+
+        Self {
+            cells: board,
+            height_limits: heights_2d,
+            center: Vector3::<f32>::new(mid_x, mid_y, mid_z),
+        }
     }
 
-    pub fn new_pyramid() -> Self {
+    fn new_pyramid() -> Self {
         let heights = vec![
             vec![1, 1, 1, 1, 1, 1, 1, 1],
             vec![1, 2, 2, 2, 2, 2, 2, 1],
@@ -136,7 +185,7 @@ impl Board {
         Self::new_board_from_2d_heights(heights)
     }
 
-    pub fn new_four_by_five_by_four() -> Self {
+    fn new_four_by_five_by_four() -> Self {
         let heights = vec![
             vec![4, 4, 4, 4, 4],
             vec![4, 4, 4, 4, 4],
@@ -149,7 +198,7 @@ impl Board {
 
 impl Default for Board {
     fn default() -> Self {
-        Self::new_pyramid()
+        Self::new_four_by_five_by_four()
     }
 }
 
