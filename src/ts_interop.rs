@@ -13,6 +13,7 @@ pub struct V3(#[ts(type = "[number, number,number]")] pub Vector3<i8>);
 #[ts(export, export_to = "pkg/types/Action.ts")]
 pub enum Action {
     SelectPiece(PieceName),
+    ClearSelectedPiece,
     SetSelectedPieceOrigin(V3),
     RotateSelectedPiece(RotationAxis),
     PreviewPiece(V3),
@@ -26,4 +27,11 @@ pub enum Action {
 pub enum RotationAxis {
     X,
     Y,
+}
+
+#[derive(Serialize, Deserialize, TS, Default)]
+#[ts(export, export_to = "pkg/types/Score.ts")]
+pub struct Score {
+    pub p1: usize,
+    pub p2: usize,
 }
