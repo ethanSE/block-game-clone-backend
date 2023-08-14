@@ -7,19 +7,20 @@ use crate::{
     game_mode::GameMode,
     piece::Piece,
     player::Player,
+    ts_interop::Score,
 };
 
 #[derive(Serialize, Deserialize, Default, Debug, TS)]
 #[ts(export, export_to = "pkg/types/BoardState.ts")]
 pub struct BoardState {
-    pub pieces: Board,
+    pub board: Board,
     pub previewed_piece: Option<Vec<Cube>>,
 }
 
 impl BoardState {
     pub fn new(game_mode: GameMode) -> Self {
         Self {
-            pieces: Board::new(game_mode),
+            board: Board::new(game_mode),
             previewed_piece: None,
         }
     }
@@ -39,12 +40,12 @@ impl BoardState {
             .collect();
 
         let check_inbounds_no_collision = |c: &Cube| Cube {
-            error: self.pieces.check_in_bounds_no_collision(c.position),
+            error: self.board.check_in_bounds_no_collision(c.position),
             ..*c
         };
 
         let check_supported = |c: Cube| {
-            if self.pieces.supports(&c.position) || moved_piece.supports(&c.position) {
+            if self.board.supports(&c.position) || moved_piece.supports(&c.position) {
                 c
             } else {
                 Cube {
@@ -54,7 +55,7 @@ impl BoardState {
             }
         };
 
-        self.previewed_piece = Some(match self.pieces.check_touches_piece(positions) {
+        self.previewed_piece = Some(match self.board.check_touches_piece(positions) {
             Ok(cubes) => cubes
                 .iter()
                 .map(check_inbounds_no_collision)
@@ -67,7 +68,7 @@ impl BoardState {
     pub fn play_selected_piece(&mut self) -> Result<(), ()> {
         if let Some(preview_cubes) = &self.previewed_piece {
             if preview_cubes.iter().all(|c| c.error.is_none()) {
-                self.pieces.add_cubes(preview_cubes);
+                self.board.add_cubes(preview_cubes);
                 self.previewed_piece = None;
                 Ok(())
             } else {
@@ -80,6 +81,10 @@ impl BoardState {
 
     pub fn clear_previewed_piece(&mut self) {
         self.previewed_piece = None;
+    }
+
+    pub fn calculate_score(&self) -> Score {
+        self.board.calculate_score()
     }
 }
 

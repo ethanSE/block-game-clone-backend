@@ -7,7 +7,7 @@ use crate::{
     game_mode::GameMode,
     piece::PieceName,
     player_state::PlayerState,
-    ts_interop::{RotationAxis, V3},
+    ts_interop::{RotationAxis, Score, V3},
     Action,
 };
 
@@ -17,6 +17,7 @@ pub struct GameState {
     pub player_state: PlayerState,
     pub board_state: BoardState,
     pub game_mode: GameMode,
+    pub score: Score,
 }
 
 impl GameState {
@@ -25,12 +26,14 @@ impl GameState {
             game_mode,
             player_state: PlayerState::default(),
             board_state: BoardState::new(game_mode),
+            score: Score::default(),
         }
     }
 
     pub fn apply_action(&mut self, action: Action) {
         match action {
             Action::SelectPiece(name) => self.select_piece(name),
+            Action::ClearSelectedPiece => self.clear_selected_piece(),
             Action::SetSelectedPieceOrigin(V3(new_origin)) => {
                 self.set_selected_piece_origin(new_origin)
             }
@@ -45,6 +48,11 @@ impl GameState {
     fn select_piece(&mut self, piece_name: PieceName) {
         self.player_state.select_piece(piece_name);
         self.board_state.clear_previewed_piece()
+    }
+
+    fn clear_selected_piece(&mut self) {
+        self.board_state.clear_previewed_piece();
+        self.player_state.clear_selected_piece();
     }
 
     fn rotate_selected_piece(&mut self, rotation_axis: RotationAxis) {
@@ -65,7 +73,8 @@ impl GameState {
 
     fn play_previewed_piece(&mut self) {
         if let Ok(()) = self.board_state.play_selected_piece() {
-            self.player_state.play_selected_piece()
+            self.player_state.play_selected_piece();
+            self.score = self.board_state.calculate_score();
         }
     }
 

@@ -34,6 +34,10 @@ impl PlayerState {
         self.players[self.current_player].set_selected_piece(piece_name)
     }
 
+    pub fn clear_selected_piece(&mut self) {
+        self.players[self.current_player].clear_selected_piece();
+    }
+
     pub fn rotate_selected_piece(&mut self, rotation_axis: RotationAxis) {
         self.players[self.current_player].rotate_selected_piece(rotation_axis)
     }

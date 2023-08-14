@@ -5,6 +5,7 @@ use ts_rs::TS;
 use crate::{
     game_mode::{GameMode, TwoPlayerMap},
     player::{self, Player},
+    ts_interop::Score,
 };
 
 #[derive(Serialize, Deserialize, Debug, TS)]
@@ -26,6 +27,45 @@ impl Board {
             }
             GameMode::TwoPlayer(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
         }
+    }
+
+    pub fn calculate_score(&self) -> Score {
+        let highests: Vec<Vec<_>> = self
+            .height_limits
+            .iter()
+            .enumerate()
+            .map(|(x, row)| {
+                row.iter()
+                    .enumerate()
+                    .map(|(z, y_max)| self.get_highest_player(x as i8, z as i8, *y_max as i8))
+                    .collect()
+            })
+            .collect();
+
+        let column_top_players = highests
+            .into_iter()
+            .flat_map(|a| a.into_iter())
+            .flatten()
+            .collect::<Vec<_>>();
+
+        let p1s = column_top_players
+            .iter()
+            .filter(|item| item == &&Player::P1)
+            .count();
+
+        let p2s = column_top_players.len() - p1s;
+
+        Score { p1: p1s, p2: p2s }
+    }
+
+    fn get_highest_player(&self, x: i8, z: i8, y_max: i8) -> Option<Player> {
+        // for each pair (x,z) starting from height y and working downwards, find the first board cell that is owned by a player
+        (0..y_max)
+            .rev()
+            .find_map(|y| match self.get(Vector3::new(x, y, z)) {
+                Some(&BoardCell::Player(player)) => Some(player),
+                _ => None,
+            })
     }
 
     fn get_mut(&mut self, index: Vector3<i8>) -> Option<&mut BoardCell> {
@@ -200,6 +240,26 @@ impl Default for Board {
     fn default() -> Self {
         Self::new_four_by_five_by_four()
     }
+}
+
+#[test]
+fn print() {
+    let mut gs = GameState::default();
+
+    gs.apply_action(crate::ts_interop::Action::SelectPiece(
+        crate::piece::PieceName::Corner,
+    ));
+
+    gs.apply_action(crate::ts_interop::Action::PreviewPiece(V3(
+        Vector3::<i8>::new(0, 0, 0),
+    )));
+
+    gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
+
+    assert!(gs.score.p1 == 3);
+    assert!(gs.score.p2 == 0);
+
+    println!("{}", serde_json::to_string(&gs).unwrap())
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq, TS, Clone, Copy)]
