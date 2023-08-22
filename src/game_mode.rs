@@ -11,7 +11,7 @@ pub enum GameMode {
 
 impl Default for GameMode {
     fn default() -> Self {
-        Self::TwoPlayer(TwoPlayerMap::FourByFiveByFour)
+        Self::TwoPlayer(TwoPlayerMap::Tower)
     }
 }
 
@@ -25,6 +25,8 @@ pub enum SolitaireMap {
 #[serde(tag = "type")]
 #[ts(export, export_to = "pkg/types/TwoPlayerMap.ts")]
 pub enum TwoPlayerMap {
-    FourByFiveByFour,
+    Tower,
     Pyramid,
+    Stairs,
+    Wall,
 }
