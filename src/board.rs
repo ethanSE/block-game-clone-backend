@@ -22,10 +22,10 @@ impl Board {
     pub fn new(game_mode: GameMode) -> Self {
         match game_mode {
             GameMode::Solitaire(_) => todo!(),
-            GameMode::TwoPlayer(TwoPlayerMap::FourByFiveByFour) => {
-                Board::new_four_by_five_by_four()
-            }
+            GameMode::TwoPlayer(TwoPlayerMap::Tower) => Board::new_tower(),
             GameMode::TwoPlayer(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
+            GameMode::TwoPlayer(TwoPlayerMap::Stairs) => Board::new_corner(),
+            GameMode::TwoPlayer(TwoPlayerMap::Wall) => Board::new_wall(),
         }
     }
 
@@ -225,7 +225,7 @@ impl Board {
         Self::new_board_from_2d_heights(heights)
     }
 
-    fn new_four_by_five_by_four() -> Self {
+    fn new_tower() -> Self {
         let heights = vec![
             vec![4, 4, 4, 4, 4],
             vec![4, 4, 4, 4, 4],
@@ -234,32 +234,63 @@ impl Board {
         ];
         Self::new_board_from_2d_heights(heights)
     }
+
+    fn new_corner() -> Self {
+        let heights = vec![
+            vec![1, 2, 3, 4, 5, 5, 5, 5],
+            vec![1, 2, 3, 4, 5, 5, 5, 5],
+            vec![1, 2, 3, 4, 5, 5, 5, 5],
+            vec![1, 2, 3, 4, 5, 5, 5, 5],
+        ];
+        Self::new_board_from_2d_heights(heights)
+    }
+
+    fn new_wall() -> Self {
+        let heights = vec![
+            vec![2, 2, 2, 2, 2, 2],
+            vec![2, 2, 2, 2, 2, 2],
+            vec![2, 2, 2, 2, 2, 2],
+            vec![0, 0, 0, 2, 2, 2],
+            vec![0, 0, 0, 2, 2, 2],
+            vec![0, 0, 0, 2, 2, 2],
+            vec![0, 0, 0, 2, 2, 2],
+            vec![0, 0, 0, 2, 2, 2],
+        ];
+        Self::new_board_from_2d_heights(heights)
+    }
 }
 
 impl Default for Board {
     fn default() -> Self {
-        Self::new_four_by_five_by_four()
+        Self::new_tower()
     }
 }
 
-#[test]
-fn print() {
-    let mut gs = GameState::default();
+#[cfg(test)]
+mod test {
+    use nalgebra::Vector3;
 
-    gs.apply_action(crate::ts_interop::Action::SelectPiece(
-        crate::piece::PieceName::Corner,
-    ));
+    use crate::{game_state::GameState, ts_interop::V3};
 
-    gs.apply_action(crate::ts_interop::Action::PreviewPiece(V3(
-        Vector3::<i8>::new(0, 0, 0),
-    )));
+    #[test]
+    fn print() {
+        let mut gs = GameState::default();
 
-    gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
+        gs.apply_action(crate::ts_interop::Action::SelectPiece(
+            crate::piece::PieceName::Corner,
+        ));
 
-    assert!(gs.score.p1 == 3);
-    assert!(gs.score.p2 == 0);
+        gs.apply_action(crate::ts_interop::Action::PreviewPiece(V3(
+            Vector3::<i8>::new(0, 0, 0),
+        )));
 
-    println!("{}", serde_json::to_string(&gs).unwrap())
+        gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
+
+        assert!(gs.score.p1 == 3);
+        assert!(gs.score.p2 == 0);
+
+        println!("{}", serde_json::to_string(&gs).unwrap())
+    }
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, PartialEq, TS, Clone, Copy)]
