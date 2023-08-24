@@ -3,7 +3,7 @@ use ts_rs::TS;
 
 use crate::piece::{Piece, PieceName};
 
-#[derive(Serialize, Deserialize, TS)]
+#[derive(Serialize, Deserialize, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/Hand.ts")]
 pub struct Hand {
     one_by_two: Option<Piece>,

@@ -2,6 +2,7 @@ mod board;
 mod board_state;
 mod game_mode;
 mod game_state;
+mod greedy_ai;
 mod hand;
 mod piece;
 mod player;

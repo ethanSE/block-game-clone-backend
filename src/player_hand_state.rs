@@ -7,7 +7,7 @@ use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Serialize, Deserialize, Default, TS)]
+#[derive(Serialize, Deserialize, Default, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/PlayerHandState.ts")]
 pub struct PlayerHandState {
     selected_piece: Option<PieceName>,
@@ -29,18 +29,18 @@ impl PlayerHandState {
         self.selected_piece = Some(piece_name)
     }
 
-    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<i8>) {
+    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
         if let Some(selected_piece_name) = self.selected_piece {
-            if let Some(a) = self.pieces.get_mut(selected_piece_name) {
-                a.set_origin(new_origin)
+            if let Some(piece) = self.pieces.get_mut(selected_piece_name) {
+                piece.set_origin(new_origin)
             }
         }
     }
 
     pub fn rotate_selected_piece(&mut self, rotation_axis: RotationAxis) {
         if let Some(selected_piece_name) = self.selected_piece {
-            if let Some(a) = self.pieces.get_mut(selected_piece_name) {
-                a.rotate(rotation_axis)
+            if let Some(piece) = self.pieces.get_mut(selected_piece_name) {
+                piece.rotate(rotation_axis)
             }
         }
     }
@@ -51,5 +51,23 @@ impl PlayerHandState {
         } else {
             &None
         }
+    }
+
+    pub fn get_available_piece_rotations(&mut self) -> Vec<(PieceName, Piece)> {
+        PieceName::iter()
+            .filter_map(|name| {
+                self.pieces
+                    .get_mut(*name)
+                    .clone()
+                    .map(|piece| (name, piece))
+            })
+            .flat_map(|(name, piece)| {
+                piece
+                    .get_available_piece_rotations()
+                    .iter()
+                    .map(|piece| (*name, piece.clone()))
+                    .collect::<Vec<_>>()
+            })
+            .collect()
     }
 }
