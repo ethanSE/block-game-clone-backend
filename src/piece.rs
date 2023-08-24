@@ -135,7 +135,7 @@ impl PieceName {
 mod tests {
     use std::f32::consts::PI;
 
-    use nalgebra::{matrix, Rotation3, Vector3};
+    use nalgebra::{Rotation3, Vector3};
 
     use crate::piece::Piece;
 

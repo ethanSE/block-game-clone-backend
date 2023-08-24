@@ -23,7 +23,6 @@ pub enum SolitaireMap {
     FourByFiveByTwo,
 }
 #[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
-#[serde(tag = "type")]
 #[ts(export, export_to = "pkg/types/TwoPlayerMap.ts")]
 pub enum TwoPlayerMap {
     Tower,

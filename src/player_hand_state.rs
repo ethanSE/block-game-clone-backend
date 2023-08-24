@@ -53,14 +53,9 @@ impl PlayerHandState {
         }
     }
 
-    pub fn get_available_piece_rotations(&mut self) -> Vec<(PieceName, Piece)> {
+    pub fn get_available_piece_rotations(&self) -> Vec<(PieceName, Piece)> {
         PieceName::iter()
-            .filter_map(|name| {
-                self.pieces
-                    .get_mut(*name)
-                    .clone()
-                    .map(|piece| (name, piece))
-            })
+            .filter_map(|name| self.pieces.get(*name).as_ref().map(|piece| (name, piece)))
             .flat_map(|(name, piece)| {
                 piece
                     .get_available_piece_rotations()

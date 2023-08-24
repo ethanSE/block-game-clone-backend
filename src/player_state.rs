@@ -14,12 +14,12 @@ use crate::{
 #[ts(export, export_to = "pkg/types/PlayerState.ts")]
 pub struct PlayerState {
     pub current_player: Player,
-    players: Players,
+    pub players: Players,
 }
 
 #[derive(Serialize, Deserialize, Default, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/Players.ts")]
-struct Players {
+pub struct Players {
     p1: PlayerHandState,
     p2: PlayerHandState,
 }
