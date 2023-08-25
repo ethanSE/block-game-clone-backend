@@ -1,12 +1,14 @@
+use std::ops::Index;
+
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::piece::PieceName;
+use crate::{piece::PieceName, player::Player};
 
 #[derive(Serialize, Deserialize, TS)]
 #[ts(export, export_to = "pkg/types/V3.ts")]
-pub struct V3(#[ts(type = "[number, number,number]")] pub Vector3<i8>);
+pub struct V3(#[ts(type = "[number, number,number]")] pub Vector3<f32>);
 
 #[derive(Serialize, Deserialize, TS)]
 #[serde(tag = "type", content = "data")]
@@ -20,6 +22,7 @@ pub enum Action {
     PlayPreviewedPiece,
     PassTurn,
     Reset,
+    MakeGreedyAIMove,
 }
 
 #[derive(Serialize, Deserialize, TS)]
@@ -29,9 +32,19 @@ pub enum RotationAxis {
     Y,
 }
 
-#[derive(Serialize, Deserialize, TS, Default)]
+#[derive(Serialize, Deserialize, TS, Default, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/Score.ts")]
 pub struct Score {
-    pub p1: usize,
-    pub p2: usize,
+    pub p1: i8,
+    pub p2: i8,
+}
+
+impl Index<Player> for Score {
+    type Output = i8;
+    fn index(&self, player: Player) -> &Self::Output {
+        match player {
+            Player::P1 => &self.p1,
+            Player::P2 => &self.p2,
+        }
+    }
 }

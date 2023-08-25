@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Serialize, Deserialize, TS, Clone, Copy)]
+#[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(tag = "type", content = "data")]
 #[ts(export, export_to = "pkg/types/GameMode.ts")]
 pub enum GameMode {
     Solitaire(SolitaireMap),
     TwoPlayer(TwoPlayerMap),
+    VSGreedyAI(TwoPlayerMap),
 }
 
 impl Default for GameMode {
@@ -15,14 +16,13 @@ impl Default for GameMode {
     }
 }
 
-#[derive(Serialize, Deserialize, TS, Clone, Copy)]
+#[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(tag = "type")]
 #[ts(export, export_to = "pkg/types/SolitaireMap.ts")]
 pub enum SolitaireMap {
     FourByFiveByTwo,
 }
-#[derive(Serialize, Deserialize, TS, Clone, Copy)]
-#[serde(tag = "type")]
+#[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
 #[ts(export, export_to = "pkg/types/TwoPlayerMap.ts")]
 pub enum TwoPlayerMap {
     Tower,

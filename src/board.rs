@@ -8,7 +8,7 @@ use crate::{
     ts_interop::Score,
 };
 
-#[derive(Serialize, Deserialize, Debug, TS)]
+#[derive(Serialize, Deserialize, Debug, TS, Clone)]
 #[ts(export, export_to = "pkg/types/Board.ts")]
 pub struct Board {
     pub cells: [[[BoardCell; 8]; 8]; 8],
@@ -16,6 +16,14 @@ pub struct Board {
     pub height_limits: Vec<Vec<usize>>,
     #[ts(type = "[number, number, number]")]
     pub center: Vector3<f32>,
+}
+
+fn v3_to_index(v3: Vector3<f32>) -> Option<(usize, usize, usize)> {
+    if v3.x >= 0.0 && v3.y >= 0.0 && v3.z >= 0.0 {
+        Some((v3.x as usize, v3.y as usize, v3.z as usize))
+    } else {
+        None
+    }
 }
 
 impl Board {
@@ -26,11 +34,15 @@ impl Board {
             GameMode::TwoPlayer(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
             GameMode::TwoPlayer(TwoPlayerMap::Stairs) => Board::new_corner(),
             GameMode::TwoPlayer(TwoPlayerMap::Wall) => Board::new_wall(),
+            GameMode::VSGreedyAI(TwoPlayerMap::Tower) => Board::new_tower(),
+            GameMode::VSGreedyAI(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
+            GameMode::VSGreedyAI(TwoPlayerMap::Stairs) => Board::new_corner(),
+            GameMode::VSGreedyAI(TwoPlayerMap::Wall) => Board::new_wall(),
         }
     }
 
     pub fn calculate_score(&self) -> Score {
-        let highests: Vec<Vec<_>> = self
+        let highests: Vec<Vec<Option<Player>>> = self
             .height_limits
             .iter()
             .enumerate()
@@ -55,24 +67,61 @@ impl Board {
 
         let p2s = column_top_players.len() - p1s;
 
-        Score { p1: p1s, p2: p2s }
+        Score {
+            p1: p1s as i8,
+            p2: p2s as i8,
+        }
+    }
+
+    pub fn get_available_positions(&self) -> Vec<Vector3<f32>> {
+        self.height_limits
+            .iter()
+            .enumerate()
+            .flat_map(|(x, row)| {
+                row.iter()
+                    .enumerate()
+                    .flat_map(|(z, y_max)| {
+                        (0..=*y_max).filter_map(move |y| {
+                            match self.get(Vector3::new(x as f32, y as f32, z as f32)) {
+                                Some(&BoardCell::Empty) => {
+                                    Some(Vector3::new(x as f32, y as f32, z as f32))
+                                }
+                                _ => None,
+                            }
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect()
     }
 
     fn get_highest_player(&self, x: i8, z: i8, y_max: i8) -> Option<Player> {
         // for each pair (x,z) starting from height y and working downwards, find the first board cell that is owned by a player
-        (0..y_max)
-            .rev()
-            .find_map(|y| match self.get(Vector3::new(x, y, z)) {
+        (0..y_max).rev().find_map(
+            |y| match self.get(Vector3::new(x as f32, y as f32, z as f32)) {
                 Some(&BoardCell::Player(player)) => Some(player),
                 _ => None,
-            })
+            },
+        )
     }
 
-    fn get_mut(&mut self, index: Vector3<i8>) -> Option<&mut BoardCell> {
-        let x: usize = index.x.try_into().ok()?;
-        let y: usize = index.y.try_into().ok()?;
-        let z: usize = index.z.try_into().ok()?;
+    pub fn get_from_index(&self, (x, y, z): (usize, usize, usize)) -> Option<&BoardCell> {
+        if let Some(bc) = self
+            .cells
+            .get(x)
+            .and_then(|b| b.get(y))
+            .and_then(|c| c.get(z))
+        {
+            Some(bc)
+        } else {
+            None
+        }
+    }
 
+    pub fn get_from_index_mut(
+        &mut self,
+        (x, y, z): (usize, usize, usize),
+    ) -> Option<&mut BoardCell> {
         if let Some(bc) = self
             .cells
             .get_mut(x)
@@ -85,18 +134,17 @@ impl Board {
         }
     }
 
-    fn get(&self, index: Vector3<i8>) -> Option<&BoardCell> {
-        let x: usize = index.x.try_into().ok()?;
-        let y: usize = index.y.try_into().ok()?;
-        let z: usize = index.z.try_into().ok()?;
+    fn get_mut(&mut self, index: Vector3<f32>) -> Option<&mut BoardCell> {
+        if let Some((x, y, z)) = v3_to_index(index) {
+            self.get_from_index_mut((x, y, z))
+        } else {
+            None
+        }
+    }
 
-        if let Some(bc) = self
-            .cells
-            .get(x)
-            .and_then(|b| b.get(y))
-            .and_then(|c| c.get(z))
-        {
-            Some(bc)
+    fn get(&self, index: Vector3<f32>) -> Option<&BoardCell> {
+        if let Some((x, y, z)) = v3_to_index(index) {
+            self.get_from_index((x, y, z))
         } else {
             None
         }
@@ -110,24 +158,24 @@ impl Board {
         }
     }
 
-    pub fn supports(&self, position: &Vector3<i8>) -> bool {
+    pub fn supports(&self, position: &Vector3<f32>) -> bool {
         let supported_by_piece = self
-            .get(*position - Vector3::<i8>::new(0, 1, 0))
+            .get(*position - Vector3::<f32>::new(0.0, 1.0, 0.0))
             .is_some_and(|bc| *bc != BoardCell::Empty);
 
-        let is_on_ground = position.y == 0;
+        let is_on_ground = position.y == 0.0;
 
         supported_by_piece || is_on_ground
     }
 
-    fn get_adjacent_cells(&self, position: &Vector3<i8>) -> Vec<&BoardCell> {
+    fn get_adjacent_cells(&self, position: &Vector3<f32>) -> Vec<&BoardCell> {
         let positions = vec![
-            position - Vector3::<i8>::new(1, 0, 0),
-            position - Vector3::<i8>::new(-1, 0, 0),
-            position - Vector3::<i8>::new(0, 1, 0),
-            position - Vector3::<i8>::new(0, -1, 0),
-            position - Vector3::<i8>::new(0, 0, 1),
-            position - Vector3::<i8>::new(0, 0, -1),
+            position - Vector3::<f32>::new(1.0, 0.0, 0.0),
+            position - Vector3::<f32>::new(-1.0, 0.0, 0.0),
+            position - Vector3::<f32>::new(0.0, 1.0, 0.0),
+            position - Vector3::<f32>::new(0.0, -1.0, 0.0),
+            position - Vector3::<f32>::new(0.0, 0.0, 1.0),
+            position - Vector3::<f32>::new(0.0, 0.0, -1.0),
         ];
 
         positions.iter().filter_map(|p| self.get(*p)).collect()
@@ -168,7 +216,7 @@ impl Board {
             .and(Some(player))
     }
 
-    pub fn check_in_bounds_no_collision(&self, position: Vector3<i8>) -> Option<CubeError> {
+    pub fn check_in_bounds_no_collision(&self, position: Vector3<f32>) -> Option<CubeError> {
         match self.get(position) {
             Some(BoardCell::Empty) => None,
             Some(BoardCell::Player(_)) => Some(CubeError::Collision),
@@ -281,7 +329,7 @@ mod test {
         ));
 
         gs.apply_action(crate::ts_interop::Action::PreviewPiece(V3(
-            Vector3::<i8>::new(0, 0, 0),
+            Vector3::<f32>::new(0.0, 0.0, 0.0),
         )));
 
         gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
@@ -317,6 +365,6 @@ pub enum CubeError {
 pub struct Cube {
     pub player: player::Player,
     #[ts(type = "[number,number,number]")]
-    pub position: Vector3<i8>,
+    pub position: Vector3<f32>,
     pub error: Option<CubeError>,
 }

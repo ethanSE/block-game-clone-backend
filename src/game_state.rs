@@ -1,23 +1,27 @@
+use itertools::Itertools;
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
+use std::ops::Index;
 use ts_rs::TS;
 
 use crate::{
     board_state::BoardState,
     game_mode::GameMode,
     piece::PieceName,
+    player::Player,
     player_state::PlayerState,
     ts_interop::{RotationAxis, Score, V3},
     Action,
 };
 
-#[derive(Serialize, Deserialize, TS, Default)]
+#[derive(Serialize, Deserialize, TS, Default, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/GameState.ts")]
 pub struct GameState {
     pub player_state: PlayerState,
     pub board_state: BoardState,
     pub game_mode: GameMode,
     pub score: Score,
+    pub game_ended: bool,
 }
 
 impl GameState {
@@ -27,6 +31,7 @@ impl GameState {
             player_state: PlayerState::default(),
             board_state: BoardState::new(game_mode),
             score: Score::default(),
+            game_ended: false,
         }
     }
 
@@ -39,9 +44,12 @@ impl GameState {
             }
             Action::RotateSelectedPiece(rotation_axis) => self.rotate_selected_piece(rotation_axis),
             Action::PreviewPiece(V3(position)) => self.preview_piece(position),
-            Action::PlayPreviewedPiece => self.play_previewed_piece(),
+            Action::PlayPreviewedPiece => {
+                let _ = self.play_previewed_piece();
+            }
             Action::PassTurn => self.pass_turn(),
             Action::Reset => self.reset(),
+            Action::MakeGreedyAIMove => self.make_greedy_ai_move(),
         }
     }
 
@@ -60,32 +68,97 @@ impl GameState {
         self.board_state.clear_previewed_piece()
     }
 
-    fn set_selected_piece_origin(&mut self, new_origin: Vector3<i8>) {
+    fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
         self.player_state.set_selected_piece_origin(new_origin)
     }
 
-    fn preview_piece(&mut self, position: Vector3<i8>) {
+    fn preview_piece(&mut self, position: Vector3<f32>) {
         if let Some((current_player, piece)) = self.player_state.get_selected_piece() {
             self.board_state
                 .preview_piece(current_player, piece, position)
         }
     }
 
-    fn play_previewed_piece(&mut self) {
+    fn play_previewed_piece(&mut self) -> Result<(), ()> {
         if let Ok(()) = self.board_state.play_selected_piece() {
             self.player_state.play_selected_piece();
             self.score = self.board_state.calculate_score();
+            Ok(())
+        } else {
+            Err(())
         }
     }
 
     fn pass_turn(&mut self) {
+        println!("turn passed");
+        self.board_state.clear_previewed_piece();
         self.player_state.toggle_current_player();
-        self.board_state.clear_previewed_piece()
+        self.determine_game_ended();
     }
 
     fn reset(&mut self) {
         self.player_state = PlayerState::default();
         self.board_state = BoardState::default();
+    }
+
+    fn determine_game_ended(&mut self) {
+        if !self.available_move_exists(Player::P1) && !self.available_move_exists(Player::P2) {
+            self.game_ended = true;
+        }
+    }
+
+    fn available_move_exists(&self, player: Player) -> bool {
+        self.player_state
+            .players
+            .index(player)
+            .get_available_piece_rotations()
+            .into_iter()
+            .cartesian_product(self.board_state.board.get_available_positions().into_iter())
+            .filter_map(|((piece_name, piece), position)| {
+                let mut next_game_state = self.clone();
+                next_game_state.apply_action(Action::SelectPiece(piece_name));
+                next_game_state.board_state.preview_piece(
+                    self.player_state.current_player,
+                    piece,
+                    position,
+                );
+                next_game_state.play_previewed_piece().ok()
+            })
+            .next()
+            .is_some()
+    }
+
+    pub fn make_greedy_ai_move(&mut self) {
+        let all_moves = self
+            .player_state
+            .get_available_piece_rotations()
+            .into_iter()
+            .cartesian_product(self.board_state.board.get_available_positions().into_iter());
+
+        let best_move_resulting_gs = all_moves
+            .filter_map(|((piece_name, piece), position)| {
+                let mut next_game_state = self.clone();
+                next_game_state.apply_action(Action::SelectPiece(piece_name));
+                next_game_state.board_state.preview_piece(
+                    self.player_state.current_player,
+                    piece,
+                    position,
+                );
+                match next_game_state.play_previewed_piece() {
+                    Ok(_) => Some((
+                        next_game_state.score[self.player_state.current_player]
+                            - next_game_state.score[self.player_state.current_player.get_other()],
+                        next_game_state,
+                    )),
+                    Err(_) => None,
+                }
+            })
+            .max_by(|a, b| a.0.cmp(&b.0));
+
+        match best_move_resulting_gs {
+            Some((_score, next_gs)) => *self = next_gs,
+            None => self.apply_action(Action::PassTurn),
+        }
     }
 }
 
@@ -102,10 +175,36 @@ mod tests {
         let mut gs = GameState::new(GameMode::default());
 
         gs.apply_action(Action::SelectPiece(PieceName::Corner));
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
 
         let gs_str = serde_json::to_string(&gs).unwrap();
         println!("{}", gs_str)
+    }
+
+    #[test]
+    fn test_ai_move() {
+        let mut gs = GameState::new(GameMode::VSGreedyAI(
+            crate::game_mode::TwoPlayerMap::Pyramid,
+        ));
+
+        gs.apply_action(Action::MakeGreedyAIMove);
+        println!("{:?}", gs);
+        gs.apply_action(Action::MakeGreedyAIMove);
+        println!("{:?}", gs);
+    }
+
+    #[test]
+    fn test_ai_vs_ai() {
+        let mut gs = GameState::new(GameMode::VSGreedyAI(
+            crate::game_mode::TwoPlayerMap::Pyramid,
+        ));
+
+        while !gs.game_ended {
+            println!("{:?}", gs);
+            gs.make_greedy_ai_move();
+            println!("made move");
+        }
+        println!("{:?}", gs);
     }
 }

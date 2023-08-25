@@ -10,16 +10,16 @@ use crate::{
     ts_interop::RotationAxis,
 };
 
-#[derive(Serialize, Deserialize, Default, TS)]
+#[derive(Serialize, Deserialize, Default, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/PlayerState.ts")]
 pub struct PlayerState {
-    current_player: Player,
-    players: Players,
+    pub current_player: Player,
+    pub players: Players,
 }
 
-#[derive(Serialize, Deserialize, Default, TS)]
+#[derive(Serialize, Deserialize, Default, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/Players.ts")]
-struct Players {
+pub struct Players {
     p1: PlayerHandState,
     p2: PlayerHandState,
 }
@@ -42,7 +42,7 @@ impl PlayerState {
         self.players[self.current_player].rotate_selected_piece(rotation_axis)
     }
 
-    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<i8>) {
+    pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
         self.players[self.current_player].set_selected_piece_origin(new_origin)
     }
 
@@ -51,12 +51,16 @@ impl PlayerState {
         self.toggle_current_player();
     }
 
-    pub fn get_selected_piece(&mut self) -> Option<(Player, &Piece)> {
+    pub fn get_selected_piece(&mut self) -> Option<(Player, Piece)> {
         if let Some(piece) = self.players[self.current_player].get_selected_piece() {
-            Some((self.current_player, piece))
+            Some((self.current_player, piece.clone()))
         } else {
             None
         }
+    }
+
+    pub fn get_available_piece_rotations(&self) -> Vec<(PieceName, Piece)> {
+        self.players.clone()[self.current_player].get_available_piece_rotations()
     }
 }
 

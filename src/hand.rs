@@ -3,7 +3,7 @@ use ts_rs::TS;
 
 use crate::piece::{Piece, PieceName};
 
-#[derive(Serialize, Deserialize, TS)]
+#[derive(Serialize, Deserialize, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/Hand.ts")]
 pub struct Hand {
     one_by_two: Option<Piece>,
@@ -99,6 +99,22 @@ impl Hand {
             PieceName::RightScrew => &mut self.right_screw,
             PieceName::LeftScrew => &mut self.left_screw,
             PieceName::Corner => &mut self.corner,
+        }
+    }
+
+    pub fn get(&self, index: PieceName) -> &Option<Piece> {
+        match index {
+            PieceName::OneByTwo => &self.one_by_two,
+            PieceName::OneByThree => &self.one_by_three,
+            PieceName::OneByFour => &self.one_by_four,
+            PieceName::TwoByTwo => &self.two_by_two,
+            PieceName::Z => &self.z,
+            PieceName::T => &self.t,
+            PieceName::L => &self.l,
+            PieceName::ShortL => &self.short_l,
+            PieceName::RightScrew => &self.right_screw,
+            PieceName::LeftScrew => &self.left_screw,
+            PieceName::Corner => &self.corner,
         }
     }
 }

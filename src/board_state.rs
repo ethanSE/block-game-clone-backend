@@ -10,7 +10,7 @@ use crate::{
     ts_interop::Score,
 };
 
-#[derive(Serialize, Deserialize, Default, Debug, TS)]
+#[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
 #[ts(export, export_to = "pkg/types/BoardState.ts")]
 pub struct BoardState {
     pub board: Board,
@@ -25,7 +25,17 @@ impl BoardState {
         }
     }
 
-    pub fn preview_piece(&mut self, current_player: Player, piece: &Piece, position: Vector3<i8>) {
+    pub fn preview_piece(&mut self, current_player: Player, piece: Piece, position: Vector3<f32>) {
+        self.previewed_piece =
+            Some(self.check_piece_placement(current_player, piece.clone(), position));
+    }
+
+    pub fn check_piece_placement(
+        &self,
+        current_player: Player,
+        piece: Piece,
+        position: Vector3<f32>,
+    ) -> Vec<Cube> {
         //build the piece from the piece and position offset
         let moved_piece = piece.get_moved_copy(position);
 
@@ -55,14 +65,14 @@ impl BoardState {
             }
         };
 
-        self.previewed_piece = Some(match self.board.check_touches_piece(positions) {
+        return match self.board.check_touches_piece(positions) {
             Ok(cubes) => cubes
                 .iter()
                 .map(check_inbounds_no_collision)
                 .map(check_supported)
                 .collect(),
             Err(cubes) => cubes,
-        });
+        };
     }
 
     pub fn play_selected_piece(&mut self) -> Result<(), ()> {
@@ -98,7 +108,7 @@ mod tests {
         let mut gs = GameState::default();
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
 
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
 
         if let Some(preview_piece) = gs.board_state.previewed_piece {
             assert!(preview_piece.iter().all(|c| c.error.is_none()));
@@ -110,7 +120,7 @@ mod tests {
         let mut gs = GameState::default();
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
 
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
 
         if let Some(preview_piece) = &gs.board_state.previewed_piece {
             assert!(preview_piece.iter().all(|c| c.error.is_none()));
@@ -120,7 +130,7 @@ mod tests {
 
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
 
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 1, 0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 1.0, 0.0))));
 
         if let Some(a) = &gs.board_state.previewed_piece {
             assert!(a.iter().all(|c| c.error.is_none()));
@@ -131,10 +141,10 @@ mod tests {
     fn collision() {
         let mut gs = GameState::default();
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
-        gs.apply_action(Action::PreviewPiece(V3(Vector3::<i8>::new(0, 0, 0))));
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         if let Some(a) = &gs.board_state.previewed_piece {
             println!("{:?}", a);
             assert!(a.iter().any(|c| c.error.is_some()));
