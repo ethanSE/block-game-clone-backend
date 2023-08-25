@@ -1,24 +1,29 @@
 ## block-game-clone-backend
 
-core game logic implemented in rust
+This project contains the core game logic for https://github.com/ethanSE/block_game_clone implemented in Rust.
 
-+ code for exporting as wasm module for use in web project
++ Implements game logic as a function of GameState + Action -> GameState
 
-### build wasm module
-TODO : incorporate in project better - should be able to cargo run -p "..."
++ Implements greedy AI opponent
+
++ Build automation for compiling to WebAssembly
+
++ Build automation for generating TypeScript types from Rust types for TS <-> Rust (as Wasm) interop in browser as strings
+
+### Building Package (from project root)
 
 ```shell
-cd wasm_build_automation/build_automation && cargo run 
+cargo run -p build_automation  //from project root
 ```
 
 ### Publish wasm module to NPM
 
-```
-wasm-pack publish
-```
++ bump version number in block-game-clone-backend/Cargo.toml
 
++ build
+
++ wasm-pack publish
 
 ## License
 
 * MIT license (http://opensource.org/licenses/MIT)
-
