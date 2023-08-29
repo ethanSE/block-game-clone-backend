@@ -1,9 +1,7 @@
-use std::f32::consts::PI;
-use std::slice::Iter;
-
 use itertools::Itertools;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
+use std::f32::consts::PI;
 use ts_rs::TS;
 
 use crate::ts_interop::RotationAxis;
@@ -110,25 +108,6 @@ pub enum PieceName {
     RightScrew,
     LeftScrew,
     Corner,
-}
-
-impl PieceName {
-    pub fn iter() -> Iter<'static, PieceName> {
-        [
-            PieceName::OneByTwo,
-            PieceName::OneByThree,
-            PieceName::OneByFour,
-            PieceName::TwoByTwo,
-            PieceName::Z,
-            PieceName::T,
-            PieceName::L,
-            PieceName::ShortL,
-            PieceName::RightScrew,
-            PieceName::LeftScrew,
-            PieceName::Corner,
-        ]
-        .iter()
-    }
 }
 
 #[cfg(test)]

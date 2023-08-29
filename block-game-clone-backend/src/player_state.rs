@@ -1,84 +1,93 @@
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::ops::{Index, IndexMut};
+use std::collections::HashMap;
 use ts_rs::TS;
 
 use crate::{
+    game_mode::GameMode,
     piece::{Piece, PieceName},
     player::Player,
     player_hand_state::PlayerHandState,
     ts_interop::RotationAxis,
 };
 
-#[derive(Serialize, Deserialize, Default, TS, Clone, Debug)]
+#[derive(Serialize, Deserialize, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/PlayerState.ts")]
 pub struct PlayerState {
     pub current_player: Player,
-    pub players: Players,
+    pub players: HashMap<Player, PlayerHandState>,
 }
 
-#[derive(Serialize, Deserialize, Default, TS, Clone, Debug)]
-#[ts(export, export_to = "pkg/types/Players.ts")]
-pub struct Players {
-    p1: PlayerHandState,
-    p2: PlayerHandState,
+impl Default for PlayerState {
+    fn default() -> Self {
+        PlayerState::new(GameMode::default())
+    }
 }
 
 impl PlayerState {
+    pub fn new(game_mode: GameMode) -> Self {
+        Self {
+            current_player: Player::default(),
+            players: match game_mode {
+                GameMode::Solitaire(_) => HashMap::from([(Player::P1, PlayerHandState::default())]),
+                _ => HashMap::from([
+                    (Player::P1, PlayerHandState::default()),
+                    (Player::P2, PlayerHandState::default()),
+                ]),
+            },
+        }
+    }
+
     pub fn toggle_current_player(&mut self) {
-        self.players[self.current_player].clear_selected_piece();
+        if let Some(p) = self.players.get_mut(&self.current_player) {
+            p.clear_selected_piece()
+        }
         self.current_player = self.current_player.get_other();
     }
 
     pub fn select_piece(&mut self, piece_name: PieceName) {
-        self.players[self.current_player].set_selected_piece(piece_name)
+        if let Some(p) = self.players.get_mut(&self.current_player) {
+            p.set_selected_piece(piece_name)
+        }
     }
 
     pub fn clear_selected_piece(&mut self) {
-        self.players[self.current_player].clear_selected_piece();
+        if let Some(p) = self.players.get_mut(&self.current_player) {
+            p.clear_selected_piece()
+        }
     }
 
     pub fn rotate_selected_piece(&mut self, rotation_axis: RotationAxis) {
-        self.players[self.current_player].rotate_selected_piece(rotation_axis)
+        if let Some(p) = self.players.get_mut(&self.current_player) {
+            p.rotate_selected_piece(rotation_axis)
+        }
     }
 
     pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
-        self.players[self.current_player].set_selected_piece_origin(new_origin)
+        if let Some(p) = self.players.get_mut(&self.current_player) {
+            p.set_selected_piece_origin(new_origin)
+        }
     }
 
     pub fn play_selected_piece(&mut self) {
-        self.players[self.current_player].play_selected_piece();
+        if let Some(p) = self.players.get_mut(&self.current_player) {
+            p.play_selected_piece()
+        }
         self.toggle_current_player();
     }
 
     pub fn get_selected_piece(&mut self) -> Option<(Player, Piece)> {
-        if let Some(piece) = self.players[self.current_player].get_selected_piece() {
-            Some((self.current_player, piece.clone()))
-        } else {
-            None
+        match self
+            .players
+            .get(&self.current_player)
+            .map(|p| p.get_selected_piece())
+        {
+            Some(Some(piece)) => Some((self.current_player, piece.clone())),
+            _ => None,
         }
     }
 
     pub fn get_available_piece_rotations(&self) -> Vec<(PieceName, Piece)> {
-        self.players.clone()[self.current_player].get_available_piece_rotations()
-    }
-}
-
-impl Index<Player> for Players {
-    type Output = PlayerHandState;
-    fn index(&self, index: Player) -> &Self::Output {
-        match index {
-            Player::P1 => &self.p1,
-            Player::P2 => &self.p2,
-        }
-    }
-}
-
-impl IndexMut<Player> for Players {
-    fn index_mut(&mut self, index: Player) -> &mut Self::Output {
-        match index {
-            Player::P1 => &mut self.p1,
-            Player::P2 => &mut self.p2,
-        }
+        self.players.clone()[&self.current_player].get_available_piece_rotations()
     }
 }

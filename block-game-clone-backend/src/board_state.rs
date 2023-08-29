@@ -1,5 +1,6 @@
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use ts_rs::TS;
 
 use crate::{
@@ -7,7 +8,6 @@ use crate::{
     game_mode::GameMode,
     piece::Piece,
     player::Player,
-    ts_interop::Score,
 };
 
 #[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
@@ -93,14 +93,18 @@ impl BoardState {
         self.previewed_piece = None;
     }
 
-    pub fn calculate_score(&self) -> Score {
+    pub fn calculate_score(&self) -> HashMap<Player, i8> {
         self.board.calculate_score()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{game_state::GameState, piece::PieceName, ts_interop::V3, Action};
+    use crate::{
+        game_state::GameState,
+        piece::PieceName,
+        ts_interop::{Action, V3},
+    };
     use nalgebra::Vector3;
 
     #[test]

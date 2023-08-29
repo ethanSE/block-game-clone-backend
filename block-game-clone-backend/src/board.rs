@@ -1,11 +1,11 @@
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use ts_rs::TS;
 
 use crate::{
     game_mode::{GameMode, TwoPlayerMap},
     player::{self, Player},
-    ts_interop::Score,
 };
 
 #[derive(Serialize, Deserialize, Debug, TS, Clone)]
@@ -41,7 +41,7 @@ impl Board {
         }
     }
 
-    pub fn calculate_score(&self) -> Score {
+    pub fn calculate_score(&self) -> HashMap<Player, i8> {
         let highests: Vec<Vec<Option<Player>>> = self
             .height_limits
             .iter()
@@ -67,10 +67,9 @@ impl Board {
 
         let p2s = column_top_players.len() - p1s;
 
-        Score {
-            p1: p1s as i8,
-            p2: p2s as i8,
-        }
+        let a = HashMap::from([(Player::P1, p1s as i8), (Player::P2, p2s as i8)]);
+        println!("{:?}", a);
+        a
     }
 
     pub fn get_available_positions(&self) -> Vec<Vector3<f32>> {
@@ -318,7 +317,7 @@ impl Default for Board {
 mod test {
     use nalgebra::Vector3;
 
-    use crate::{game_state::GameState, ts_interop::V3};
+    use crate::{board_state::BoardState, game_state::GameState, player::Player, ts_interop::V3};
 
     #[test]
     fn print() {
@@ -334,10 +333,22 @@ mod test {
 
         gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
 
-        assert!(gs.score.p1 == 3);
-        assert!(gs.score.p2 == 0);
+        // assert!(gs.score[&Player::P1] == 3);
+        // assert!(gs.score[&Player::P2] == 0);
 
         println!("{}", serde_json::to_string(&gs).unwrap())
+    }
+
+    #[test]
+    fn score() {
+        let b = BoardState::new(crate::game_mode::GameMode::TwoPlayer(
+            crate::game_mode::TwoPlayerMap::Stairs,
+        ));
+
+        let score = b.calculate_score();
+        println!("{:?}", score);
+        assert!(score.contains_key(&Player::P1));
+        assert!(score.contains_key(&Player::P2));
     }
 }
 

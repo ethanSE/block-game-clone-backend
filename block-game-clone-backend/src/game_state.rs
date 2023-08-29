@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::ops::Index;
+use std::{collections::HashMap, ops::Index};
 use ts_rs::TS;
 
 use crate::{
@@ -10,27 +10,29 @@ use crate::{
     piece::PieceName,
     player::Player,
     player_state::PlayerState,
-    ts_interop::{RotationAxis, Score, V3},
-    Action,
+    ts_interop::{Action, RotationAxis, V3},
 };
 
-#[derive(Serialize, Deserialize, TS, Default, Clone, Debug)]
+#[derive(Serialize, Deserialize, TS, Clone, Debug, Default)]
 #[ts(export, export_to = "pkg/types/GameState.ts")]
 pub struct GameState {
     pub player_state: PlayerState,
     pub board_state: BoardState,
     pub game_mode: GameMode,
-    pub score: Score,
+    pub score: HashMap<Player, i8>,
     pub game_ended: bool,
 }
 
 impl GameState {
-    pub fn new(game_mode: GameMode) -> Self {
+    pub(crate) fn new(game_mode: GameMode) -> Self {
         Self {
             game_mode,
-            player_state: PlayerState::default(),
+            player_state: PlayerState::new(game_mode),
             board_state: BoardState::new(game_mode),
-            score: Score::default(),
+            score: match game_mode {
+                GameMode::Solitaire(_) => HashMap::from([(Player::P1, 0)]),
+                _ => HashMap::from([(Player::P1, 0), (Player::P2, 0)]),
+            },
             game_ended: false,
         }
     }
@@ -97,7 +99,7 @@ impl GameState {
     }
 
     fn reset(&mut self) {
-        self.player_state = PlayerState::default();
+        self.player_state = PlayerState::new(self.game_mode);
         self.board_state = BoardState::default();
     }
 
@@ -110,7 +112,7 @@ impl GameState {
     fn available_move_exists(&self, player: Player) -> bool {
         self.player_state
             .players
-            .index(player)
+            .index(&player)
             .get_available_piece_rotations()
             .into_iter()
             .cartesian_product(self.board_state.board.get_available_positions().into_iter())
@@ -146,8 +148,8 @@ impl GameState {
                 );
                 match next_game_state.play_previewed_piece() {
                     Ok(_) => Some((
-                        next_game_state.score[self.player_state.current_player]
-                            - next_game_state.score[self.player_state.current_player.get_other()],
+                        next_game_state.score[&self.player_state.current_player]
+                            - next_game_state.score[&self.player_state.current_player.get_other()],
                         next_game_state,
                     )),
                     Err(_) => None,
@@ -167,7 +169,10 @@ mod tests {
     use nalgebra::Vector3;
 
     use crate::{
-        game_mode::GameMode, game_state::GameState, piece::PieceName, ts_interop::V3, Action,
+        game_mode::GameMode,
+        game_state::GameState,
+        piece::PieceName,
+        ts_interop::{Action, V3},
     };
 
     #[test]
