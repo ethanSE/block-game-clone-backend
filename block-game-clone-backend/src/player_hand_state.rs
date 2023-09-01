@@ -1,3 +1,5 @@
+//! contains [PlayerHandState]
+
 use crate::{
     piece::{Piece, PieceName},
     ts_interop::RotationAxis,
@@ -7,14 +9,18 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use ts_rs::TS;
 
+/// represents the pieces in a players hand, their availability, and which (if any) piece is selected by the player
 #[derive(Serialize, Deserialize, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/PlayerHandState.ts")]
 pub struct PlayerHandState {
+    /// The piece currently selected by the player, if one is selected
     selected_piece: Option<PieceName>,
+    /// The pieces in a player's hand. Pieces already played are represented by an Option::None
     pieces: HashMap<PieceName, Option<Piece>>,
 }
 
 impl PlayerHandState {
+    /// marks the selected piece as unavailable
     pub fn play_selected_piece(&mut self) {
         self.selected_piece.map(|selected_piece_name| {
             self.pieces
@@ -27,10 +33,14 @@ impl PlayerHandState {
         self.selected_piece = None
     }
 
+    /// sets a piece as selected by the player
     pub fn set_selected_piece(&mut self, piece_name: PieceName) {
         self.selected_piece = Some(piece_name)
     }
 
+    /// sets which cube among the cubes comprising the selected piece is the representative cube.
+    ///
+    /// All other cubes are represented as offsets from this new origin.
     pub fn set_selected_piece_origin(&mut self, new_origin: Vector3<f32>) {
         if let Some(selected_piece_name) = self.selected_piece {
             if let Some(Some(piece)) = self.pieces.get_mut(&selected_piece_name) {
@@ -39,6 +49,7 @@ impl PlayerHandState {
         }
     }
 
+    /// Rotates the selected piece PI / 2 about the rotation axis in the positive direction
     pub fn rotate_selected_piece(&mut self, rotation_axis: RotationAxis) {
         self.selected_piece.map(|piece_name| {
             self.pieces
@@ -47,6 +58,7 @@ impl PlayerHandState {
         });
     }
 
+    /// returns the selected piece if a piece is selected
     pub fn get_selected_piece(&self) -> Option<Piece> {
         if let Some(piece_name) = self.selected_piece {
             self.pieces[&piece_name].clone()
@@ -55,6 +67,9 @@ impl PlayerHandState {
         }
     }
 
+    /// returns all possible rotations of all available pieces in the player's hand
+    ///
+    /// used when searching for available moves
     pub fn get_available_piece_rotations(&self) -> Vec<(PieceName, Piece)> {
         let available_pieces = self
             .pieces

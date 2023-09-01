@@ -1,3 +1,5 @@
+//! Contains [GameState] which represents the state of the game
+
 use itertools::Itertools;
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
@@ -13,14 +15,15 @@ use crate::{
     ts_interop::{Action, RotationAxis, V3},
 };
 
+/// Represents the state of the game
 #[derive(Serialize, Deserialize, TS, Clone, Debug, Default)]
 #[ts(export, export_to = "pkg/types/GameState.ts")]
 pub struct GameState {
-    pub player_state: PlayerState,
-    pub board_state: BoardState,
-    pub game_mode: GameMode,
-    pub score: HashMap<Player, i8>,
-    pub game_ended: bool,
+    pub(crate) player_state: PlayerState,
+    pub(crate) board_state: BoardState,
+    pub(crate) game_mode: GameMode,
+    pub(crate) score: HashMap<Player, i8>,
+    pub(crate) game_ended: bool,
 }
 
 impl GameState {
@@ -37,6 +40,7 @@ impl GameState {
         }
     }
 
+    /// Takes an Action performed by a player and updates the state of the game
     pub fn apply_action(&mut self, action: Action) {
         match action {
             Action::SelectPiece(name) => self.select_piece(name),
@@ -130,7 +134,7 @@ impl GameState {
             .is_some()
     }
 
-    pub fn make_greedy_ai_move(&mut self) {
+    fn make_greedy_ai_move(&mut self) {
         let all_moves = self
             .player_state
             .get_available_piece_rotations()

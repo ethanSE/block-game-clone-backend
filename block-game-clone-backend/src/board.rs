@@ -1,3 +1,5 @@
+//! Contains [Board]
+
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,6 +10,7 @@ use crate::{
     player::{self, Player},
 };
 
+/// Represents the state of the
 #[derive(Serialize, Deserialize, Debug, TS, Clone)]
 #[ts(export, export_to = "pkg/types/Board.ts")]
 pub struct Board {

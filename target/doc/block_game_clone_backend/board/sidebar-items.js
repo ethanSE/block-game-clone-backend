@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["BoardCell","CubeError"],"fn":["v3_to_index"],"struct":["Board","Cube"]};

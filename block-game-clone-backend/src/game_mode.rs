@@ -1,6 +1,9 @@
+//! Contains [GameMode]
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Represents game mode and map
 #[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(tag = "type", content = "data")]
 #[ts(export, export_to = "pkg/types/GameMode.ts")]

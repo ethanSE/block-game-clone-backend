@@ -1,3 +1,5 @@
+//! Contains [BoardState]
+
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -25,11 +27,17 @@ impl BoardState {
         }
     }
 
+    /// Previews a piece placement
+    ///
+    /// Used for allowing a user to visualize the effect of placing a piece on the board
+    ///
+    /// Contains information about move validity
     pub fn preview_piece(&mut self, current_player: Player, piece: Piece, position: Vector3<f32>) {
         self.previewed_piece =
             Some(self.check_piece_placement(current_player, piece.clone(), position));
     }
 
+    /// returns Vec of cubes with position and possible error information
     pub fn check_piece_placement(
         &self,
         current_player: Player,
@@ -75,6 +83,7 @@ impl BoardState {
         };
     }
 
+    /// Plays the selected piece if the previewed move is valid
     pub fn play_selected_piece(&mut self) -> Result<(), ()> {
         if let Some(preview_cubes) = &self.previewed_piece {
             if preview_cubes.iter().all(|c| c.error.is_none()) {
@@ -89,10 +98,12 @@ impl BoardState {
         }
     }
 
+    /// Clears the previewed piece
     pub fn clear_previewed_piece(&mut self) {
         self.previewed_piece = None;
     }
 
+    /// Returns the current score
     pub fn calculate_score(&self) -> HashMap<Player, i8> {
         self.board.calculate_score()
     }

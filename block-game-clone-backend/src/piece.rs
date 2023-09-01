@@ -1,3 +1,4 @@
+//! Contains [Piece], [PieceName]
 use itertools::Itertools;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
@@ -6,6 +7,7 @@ use ts_rs::TS;
 
 use crate::ts_interop::RotationAxis;
 
+/// Represents a piece as a Vec of offsets as [`nalgebra::Vector3<f32>`] from [0,0,0]
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(export, export_to = "pkg/types/Piece.ts")]
 pub struct Piece {
@@ -14,16 +16,21 @@ pub struct Piece {
 }
 
 impl Piece {
+    /// applies vector translation to constituent cubes
     pub fn get_moved_copy(&self, position: Vector3<f32>) -> Piece {
         Piece {
             coords: self.coords.iter().map(|c| c + position).collect(),
         }
     }
 
+    /// Imagine picking up a [Polycube](https://https://en.wikipedia.org/wiki/Polycube) by one of the cubes
+    ///
+    /// The position of the cubes are expressed as offsets from this selected cube which is at the origin
     pub fn set_origin(&mut self, new_origin: Vector3<f32>) {
         self.coords = self.coords.iter().map(|a| a - new_origin).collect();
     }
 
+    /// Rotates the piece about the input RotationAxis
     pub fn rotate(&mut self, rotation_axis: RotationAxis) {
         let rotation = Rotation3::from_axis_angle(
             &match rotation_axis {
@@ -61,14 +68,16 @@ impl Piece {
         }
     }
 
+    /// Does this piece support a given position. All cubes must be supported. A cube can be supported by another cube in the same piece
     pub fn supports(&self, position: &Vector3<f32>) -> bool {
         self.coords
             .iter()
             .any(|c| *c == position - Vector3::<f32>::new(0.0, 1.0, 0.0))
     }
 
+    /// Give all possible rotations of the current piece
     pub fn get_available_piece_rotations(&self) -> Vec<Piece> {
-        //determines which side faces upwards
+        // determines which side faces upwards (positive Y direction)
         let side_up_rotations = vec![
             Rotation3::from_axis_angle(&Vector3::x_axis(), PI * 0.0),
             Rotation3::from_axis_angle(&Vector3::x_axis(), PI * 0.5),
@@ -77,7 +86,7 @@ impl Piece {
             Rotation3::from_axis_angle(&Vector3::z_axis(), PI * 0.5),
             Rotation3::from_axis_angle(&Vector3::z_axis(), PI * 1.5),
         ];
-        //rotation about y-axis
+        // rotation about y-axis
         let y_axis_rotations = vec![
             Rotation3::from_axis_angle(&Vector3::y_axis(), PI * 0.0),
             Rotation3::from_axis_angle(&Vector3::y_axis(), PI * 0.5),
@@ -93,6 +102,7 @@ impl Piece {
     }
 }
 
+/// identifies pieces
 #[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Copy, Clone, TS, Debug)]
 #[ts(export, export_to = "pkg/types/PieceName.ts")]
 #[serde(rename_all = "snake_case")]
