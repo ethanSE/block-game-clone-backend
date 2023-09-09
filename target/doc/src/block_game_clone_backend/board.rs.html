@@ -354,34 +354,6 @@
 <a href="#354" id="354">354</a>
 <a href="#355" id="355">355</a>
 <a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Contains [Board]
 
 </span><span class="kw">use </span>nalgebra::Vector3;
@@ -394,14 +366,16 @@
     player::{<span class="self">self</span>, Player},
 };
 
-<span class="doccomment">/// Represents the state of the
+<span class="doccomment">/// Represents the state of the board
 </span><span class="attr">#[derive(Serialize, Deserialize, Debug, TS, Clone)]
 #[ts(export, export_to = <span class="string">&quot;pkg/types/Board.ts&quot;</span>)]
 </span><span class="kw">pub struct </span>Board {
     <span class="kw">pub </span>cells: [[[BoardCell; <span class="number">8</span>]; <span class="number">8</span>]; <span class="number">8</span>],
-    <span class="attr">#[ts(<span class="kw">type </span>= <span class="string">&quot;Array&lt;Array&lt;number&gt;&gt;&quot;</span>)]
+    <span class="doccomment">/// used to construct, show available space to player
+    </span><span class="attr">#[ts(<span class="kw">type </span>= <span class="string">&quot;Array&lt;Array&lt;number&gt;&gt;&quot;</span>)]
     </span><span class="kw">pub </span>height_limits: Vec&lt;Vec&lt;usize&gt;&gt;,
-    <span class="attr">#[ts(<span class="kw">type </span>= <span class="string">&quot;[number, number, number]&quot;</span>)]
+    <span class="doccomment">/// useful for centering a camera
+    </span><span class="attr">#[ts(<span class="kw">type </span>= <span class="string">&quot;[number, number, number]&quot;</span>)]
     </span><span class="kw">pub </span>center: Vector3&lt;f32&gt;,
 }
 
@@ -414,52 +388,78 @@
 }
 
 <span class="kw">impl </span>Board {
-    <span class="kw">pub fn </span>new(game_mode: GameMode) -&gt; <span class="self">Self </span>{
-        <span class="kw">match </span>game_mode {
-            GameMode::Solitaire(<span class="kw">_</span>) =&gt; <span class="macro">todo!</span>(),
-            GameMode::TwoPlayer(TwoPlayerMap::Tower) =&gt; Board::new_tower(),
-            GameMode::TwoPlayer(TwoPlayerMap::Pyramid) =&gt; Board::new_pyramid(),
-            GameMode::TwoPlayer(TwoPlayerMap::Stairs) =&gt; Board::new_corner(),
-            GameMode::TwoPlayer(TwoPlayerMap::Wall) =&gt; Board::new_wall(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Tower) =&gt; Board::new_tower(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Pyramid) =&gt; Board::new_pyramid(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Stairs) =&gt; Board::new_corner(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Wall) =&gt; Board::new_wall(),
+    <span class="kw">fn </span>map_to_heights(map: TwoPlayerMap) -&gt; Vec&lt;Vec&lt;usize&gt;&gt; {
+        <span class="kw">match </span>map {
+            TwoPlayerMap::Tower =&gt; <span class="macro">vec!</span>[
+                <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
+                <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
+                <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
+                <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
+            ],
+            TwoPlayerMap::Pyramid =&gt; <span class="macro">vec!</span>[
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">1</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>],
+            ],
+            TwoPlayerMap::Stairs =&gt; <span class="macro">vec!</span>[
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
+                <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
+            ],
+            TwoPlayerMap::Wall =&gt; <span class="macro">vec!</span>[
+                <span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+                <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
+            ],
         }
     }
 
+    <span class="kw">pub fn </span>new(game_mode: GameMode) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::new_board_from_2d_heights(<span class="kw">match </span>game_mode {
+            GameMode::Solitaire(<span class="kw">_</span>) =&gt; <span class="macro">todo!</span>(),
+            GameMode::TwoPlayer(map) =&gt; <span class="self">Self</span>::map_to_heights(map),
+            GameMode::VSGreedyAI(map) =&gt; <span class="self">Self</span>::map_to_heights(map),
+        })
+    }
+
     <span class="kw">pub fn </span>calculate_score(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; HashMap&lt;Player, i8&gt; {
-        <span class="kw">let </span>highests: Vec&lt;Vec&lt;<span class="prelude-ty">Option</span>&lt;Player&gt;&gt;&gt; = <span class="self">self
+        <span class="kw">let </span>highests: Vec&lt;Player&gt; = <span class="self">self
             </span>.height_limits
             .iter()
             .enumerate()
-            .map(|(x, row)| {
+            .flat_map(|(x, row)| {
                 row.iter()
                     .enumerate()
-                    .map(|(z, y_max)| <span class="self">self</span>.get_highest_player(x <span class="kw">as </span>i8, z <span class="kw">as </span>i8, <span class="kw-2">*</span>y_max <span class="kw">as </span>i8))
-                    .collect()
+                    .filter_map(|(z, y_max)| {
+                        <span class="self">self</span>.get_highest_player(x <span class="kw">as </span>i8, z <span class="kw">as </span>i8, <span class="kw-2">*</span>y_max <span class="kw">as </span>i8)
+                    })
+                    .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
             })
             .collect();
 
-        <span class="kw">let </span>column_top_players = highests
-            .into_iter()
-            .flat_map(|a| a.into_iter())
-            .flatten()
-            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+        <span class="kw">let </span>total = highests.len();
 
-        <span class="kw">let </span>p1s = column_top_players
-            .iter()
-            .filter(|item| item == &amp;&amp;Player::P1)
+        <span class="kw">let </span>p1s = highests
+            .into_iter()
+            .filter(|item| item == <span class="kw-2">&amp;</span>Player::P1)
             .count();
 
-        <span class="kw">let </span>p2s = column_top_players.len() - p1s;
-
-        <span class="kw">let </span>a = HashMap::from([(Player::P1, p1s <span class="kw">as </span>i8), (Player::P2, p2s <span class="kw">as </span>i8)]);
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, a);
-        a
+        HashMap::from([(Player::P1, p1s <span class="kw">as </span>i8), (Player::P2, (total - p1s) <span class="kw">as </span>i8)])
     }
 
-    <span class="kw">pub fn </span>get_available_positions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;Vector3&lt;f32&gt;&gt; {
+    <span class="doccomment">/// returns all available positions on the board. Used for searching for possible moves
+    </span><span class="kw">pub fn </span>get_available_positions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;Vector3&lt;f32&gt;&gt; {
         <span class="self">self</span>.height_limits
             .iter()
             .enumerate()
@@ -467,13 +467,11 @@
                 row.iter()
                     .enumerate()
                     .flat_map(|(z, y_max)| {
-                        (<span class="number">0</span>..=<span class="kw-2">*</span>y_max).filter_map(<span class="kw">move </span>|y| {
-                            <span class="kw">match </span><span class="self">self</span>.get(Vector3::new(x <span class="kw">as </span>f32, y <span class="kw">as </span>f32, z <span class="kw">as </span>f32)) {
-                                <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>BoardCell::Empty) =&gt; {
-                                    <span class="prelude-val">Some</span>(Vector3::new(x <span class="kw">as </span>f32, y <span class="kw">as </span>f32, z <span class="kw">as </span>f32))
-                                }
-                                <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                        (<span class="number">0</span>..=<span class="kw-2">*</span>y_max).filter_map(<span class="kw">move </span>|y| <span class="kw">match </span><span class="self">self</span>.get_from_index((x, y, z)) {
+                            <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>BoardCell::Empty) =&gt; {
+                                <span class="prelude-val">Some</span>(Vector3::new(x <span class="kw">as </span>f32, y <span class="kw">as </span>f32, z <span class="kw">as </span>f32))
                             }
+                            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
                         })
                     })
                     .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
@@ -481,7 +479,8 @@
             .collect()
     }
 
-    <span class="kw">fn </span>get_highest_player(<span class="kw-2">&amp;</span><span class="self">self</span>, x: i8, z: i8, y_max: i8) -&gt; <span class="prelude-ty">Option</span>&lt;Player&gt; {
+    <span class="doccomment">/// Returns the highest player for a given column, used for scoring
+    </span><span class="kw">fn </span>get_highest_player(<span class="kw-2">&amp;</span><span class="self">self</span>, x: i8, z: i8, y_max: i8) -&gt; <span class="prelude-ty">Option</span>&lt;Player&gt; {
         <span class="comment">// for each pair (x,z) starting from height y and working downwards, find the first board cell that is owned by a player
         </span>(<span class="number">0</span>..y_max).rev().find_map(
             |y| <span class="kw">match </span><span class="self">self</span>.get(Vector3::new(x <span class="kw">as </span>f32, y <span class="kw">as </span>f32, z <span class="kw">as </span>f32)) {
@@ -491,46 +490,31 @@
         )
     }
 
-    <span class="kw">pub fn </span>get_from_index(<span class="kw-2">&amp;</span><span class="self">self</span>, (x, y, z): (usize, usize, usize)) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>BoardCell&gt; {
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(bc) = <span class="self">self
-            </span>.cells
+    <span class="kw">fn </span>get_from_index(<span class="kw-2">&amp;</span><span class="self">self</span>, (x, y, z): (usize, usize, usize)) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>BoardCell&gt; {
+        <span class="self">self</span>.cells
             .get(x)
             .and_then(|b| b.get(y))
             .and_then(|c| c.get(z))
-        {
-            <span class="prelude-val">Some</span>(bc)
-        } <span class="kw">else </span>{
-            <span class="prelude-val">None
-        </span>}
     }
 
-    <span class="kw">pub fn </span>get_from_index_mut(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-        (x, y, z): (usize, usize, usize),
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>BoardCell&gt; {
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(bc) = <span class="self">self
-            </span>.cells
+    <span class="kw">fn </span>get_from_index_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, (x, y, z): (usize, usize, usize)) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>BoardCell&gt; {
+        <span class="self">self</span>.cells
             .get_mut(x)
             .and_then(|b| b.get_mut(y))
             .and_then(|c| c.get_mut(z))
-        {
-            <span class="prelude-val">Some</span>(bc)
-        } <span class="kw">else </span>{
-            <span class="prelude-val">None
-        </span>}
     }
 
-    <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: Vector3&lt;f32&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>BoardCell&gt; {
-        <span class="kw">if let </span><span class="prelude-val">Some</span>((x, y, z)) = v3_to_index(index) {
-            <span class="self">self</span>.get_from_index_mut((x, y, z))
-        } <span class="kw">else </span>{
-            <span class="prelude-val">None
-        </span>}
-    }
-
-    <span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Vector3&lt;f32&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>BoardCell&gt; {
+    <span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Vector3&lt;f32&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>BoardCell&gt; {
         <span class="kw">if let </span><span class="prelude-val">Some</span>((x, y, z)) = v3_to_index(index) {
             <span class="self">self</span>.get_from_index((x, y, z))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">None
+        </span>}
+    }
+
+    <span class="kw">pub fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: Vector3&lt;f32&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>BoardCell&gt; {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>((x, y, z)) = v3_to_index(index) {
+            <span class="self">self</span>.get_from_index_mut((x, y, z))
         } <span class="kw">else </span>{
             <span class="prelude-val">None
         </span>}
@@ -567,38 +551,46 @@
         positions.iter().filter_map(|p| <span class="self">self</span>.get(<span class="kw-2">*</span>p)).collect()
     }
 
-    <span class="kw">pub fn </span>check_touches_piece(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut </span>coords: Vec&lt;Cube&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Cube&gt;, Vec&lt;Cube&gt;&gt; {
-        <span class="kw">let </span>player = coords[<span class="number">0</span>].player;
+    <span class="doccomment">/// implements game rule requiring players to play touching their own piece.
+    ///
+    /// The first player may play anywhere. The second must touch the first
+    </span><span class="kw">pub fn </span>check_touches_piece(<span class="kw-2">&amp;</span><span class="self">self</span>, new_piece_coords: Vec&lt;Cube&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Cube&gt;, Vec&lt;Cube&gt;&gt; {
+        <span class="kw">let </span>player = new_piece_coords[<span class="number">0</span>].player;
 
-        <span class="kw">let </span>player_to_check_for = <span class="self">self
+        <span class="comment">// the first player can play anywhere, the second player mst touch the first, after this, all players must touch their own piece
+        </span><span class="kw">let </span>player_to_check_for = <span class="self">self
             </span>.player_has_played(player)
             .or(<span class="self">self</span>.player_has_played(player.get_other()));
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(player) = player_to_check_for {
-            <span class="kw">if </span>coords
+            <span class="kw">if </span>new_piece_coords
                 .iter()
                 .flat_map(|p| <span class="self">self</span>.get_adjacent_cells(<span class="kw-2">&amp;</span>p.position))
                 .any(|bc| <span class="kw-2">*</span>bc == BoardCell::Player(player))
             {
-                <span class="prelude-val">Ok</span>(coords)
+                <span class="prelude-val">Ok</span>(new_piece_coords)
             } <span class="kw">else </span>{
-                <span class="kw">for </span>c <span class="kw">in </span><span class="kw-2">&amp;mut </span>coords {
-                    c.error = <span class="prelude-val">Some</span>(CubeError::NotTouchingPiece)
-                }
-                <span class="prelude-val">Err</span>(coords)
+                <span class="comment">//embed error in all cubes
+                </span><span class="prelude-val">Err</span>(new_piece_coords
+                    .iter()
+                    .map(|cube| Cube {
+                        error: <span class="prelude-val">Some</span>(CubeError::NotTouchingPiece),
+                        ..<span class="kw-2">*</span>cube
+                    })
+                    .collect())
             }
         } <span class="kw">else </span>{
-            <span class="prelude-val">Ok</span>(coords)
+            <span class="comment">// neither player has played, free to play anywhere
+            </span><span class="prelude-val">Ok</span>(new_piece_coords)
         }
     }
 
-    <span class="kw">fn </span>player_has_played(<span class="kw-2">&amp;</span><span class="self">self</span>, player: Player) -&gt; <span class="prelude-ty">Option</span>&lt;Player&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>all_indices = <span class="self">self
-            </span>.cells
-            .iter()
-            .flat_map(|a| a.iter().flat_map(|b| b.iter()));
-        all_indices
-            .find(|bc| <span class="kw-2">**</span>bc == BoardCell::Player(player))
+    <span class="doccomment">/// determines whether or not a player has played
+    </span><span class="kw">fn </span>player_has_played(<span class="kw-2">&amp;</span><span class="self">self</span>, player: Player) -&gt; <span class="prelude-ty">Option</span>&lt;Player&gt; {
+        <span class="self">self</span>.cells
+            .into_iter()
+            .flat_map(|a| a.into_iter().flat_map(|b| b.into_iter()))
+            .find(|bc| bc == <span class="kw-2">&amp;</span>BoardCell::Player(player))
             .and(<span class="prelude-val">Some</span>(player))
     }
 
@@ -644,59 +636,11 @@
             center: Vector3::&lt;f32&gt;::new(mid_x, mid_y, mid_z),
         }
     }
-
-    <span class="kw">fn </span>new_pyramid() -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>heights = <span class="macro">vec!</span>[
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">1</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>],
-        ];
-        <span class="self">Self</span>::new_board_from_2d_heights(heights)
-    }
-
-    <span class="kw">fn </span>new_tower() -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>heights = <span class="macro">vec!</span>[
-            <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
-            <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
-            <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
-            <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>],
-        ];
-        <span class="self">Self</span>::new_board_from_2d_heights(heights)
-    }
-
-    <span class="kw">fn </span>new_corner() -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>heights = <span class="macro">vec!</span>[
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
-            <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">5</span>],
-        ];
-        <span class="self">Self</span>::new_board_from_2d_heights(heights)
-    }
-
-    <span class="kw">fn </span>new_wall() -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>heights = <span class="macro">vec!</span>[
-            <span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-            <span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">2</span>],
-        ];
-        <span class="self">Self</span>::new_board_from_2d_heights(heights)
-    }
 }
 
 <span class="kw">impl </span>Default <span class="kw">for </span>Board {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self</span>::new_tower()
+        <span class="self">Self</span>::new_board_from_2d_heights(<span class="self">Self</span>::map_to_heights(TwoPlayerMap::Tower))
     }
 }
 
@@ -749,7 +693,7 @@
     OutOfBounds,
 }
 
-<span class="attr">#[derive(Serialize, Deserialize, Debug, Clone, Copy, TS)]
+<span class="attr">#[derive(Serialize, Deserialize, Debug, Clone, Copy, TS, PartialEq)]
 #[ts(export, export_to = <span class="string">&quot;pkg/types/CubeError.ts&quot;</span>)]
 </span><span class="kw">pub enum </span>CubeError {
     Collision,

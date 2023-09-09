@@ -166,6 +166,41 @@
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Contains [BoardState]
 
 </span><span class="kw">use </span>nalgebra::Vector3;
@@ -179,12 +214,14 @@
     piece::Piece,
     player::Player,
 };
-
-<span class="attr">#[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
+<span class="doccomment">/// The state of the board, including move preview
+</span><span class="attr">#[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
 #[ts(export, export_to = <span class="string">&quot;pkg/types/BoardState.ts&quot;</span>)]
 </span><span class="kw">pub struct </span>BoardState {
-    <span class="kw">pub </span>board: Board,
-    <span class="kw">pub </span>previewed_piece: <span class="prelude-ty">Option</span>&lt;Vec&lt;Cube&gt;&gt;,
+    <span class="doccomment">/// the current state of the board, available space, pieces that are in play
+    </span><span class="kw">pub </span>board: Board,
+    <span class="doccomment">/// used to show a player the result of a possible move, move validity
+    </span><span class="kw">pub </span>previewed_piece: <span class="prelude-ty">Option</span>&lt;Vec&lt;Cube&gt;&gt;,
 }
 
 <span class="kw">impl </span>BoardState {
@@ -205,6 +242,34 @@
             <span class="prelude-val">Some</span>(<span class="self">self</span>.check_piece_placement(current_player, piece.clone(), position));
     }
 
+    <span class="doccomment">///  performs in bounds and collision checks
+    ///
+    ///  returns copy with optional error embedded
+    </span><span class="kw">fn </span>check_in_bounds_no_collision(<span class="kw-2">&amp;</span><span class="self">self</span>, preview_cube: <span class="kw-2">&amp;</span>Cube) -&gt; Cube {
+        Cube {
+            error: <span class="self">self
+                </span>.board
+                .check_in_bounds_no_collision(preview_cube.position),
+            ..<span class="kw-2">*</span>preview_cube
+        }
+    }
+
+    <span class="doccomment">/// Checks that a given cube of the potential play is supported either by a piece already in play or by another cube in the same piece
+    ///
+    /// adds CubeError::Unsupported if not
+    </span><span class="kw">fn </span>check_cube_supported(<span class="kw-2">&amp;</span><span class="self">self</span>, preview_cube: Cube, moved_piece: <span class="kw-2">&amp;</span>Piece) -&gt; Cube {
+        <span class="kw">if </span><span class="self">self</span>.board.supports(<span class="kw-2">&amp;</span>preview_cube.position)
+            || moved_piece.supports(<span class="kw-2">&amp;</span>preview_cube.position)
+        {
+            preview_cube
+        } <span class="kw">else </span>{
+            Cube {
+                error: <span class="prelude-val">Some</span>(CubeError::Unsupported),
+                ..preview_cube
+            }
+        }
+    }
+
     <span class="doccomment">/// returns Vec of cubes with position and possible error information
     </span><span class="kw">pub fn </span>check_piece_placement(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -212,10 +277,10 @@
         piece: Piece,
         position: Vector3&lt;f32&gt;,
     ) -&gt; Vec&lt;Cube&gt; {
-        <span class="comment">//build the piece from the piece and position offset
+        <span class="comment">// build the piece from the piece and position offset
         </span><span class="kw">let </span>moved_piece = piece.get_moved_copy(position);
 
-        <span class="kw">let </span>positions: Vec&lt;Cube&gt; = moved_piece
+        <span class="kw">let </span>preview_cubes: Vec&lt;Cube&gt; = moved_piece
             .coords
             .iter()
             .map(|v3| Cube {
@@ -225,30 +290,14 @@
             })
             .collect();
 
-        <span class="kw">let </span>check_inbounds_no_collision = |c: <span class="kw-2">&amp;</span>Cube| Cube {
-            error: <span class="self">self</span>.board.check_in_bounds_no_collision(c.position),
-            ..<span class="kw-2">*</span>c
-        };
-
-        <span class="kw">let </span>check_supported = |c: Cube| {
-            <span class="kw">if </span><span class="self">self</span>.board.supports(<span class="kw-2">&amp;</span>c.position) || moved_piece.supports(<span class="kw-2">&amp;</span>c.position) {
-                c
-            } <span class="kw">else </span>{
-                Cube {
-                    error: <span class="prelude-val">Some</span>(CubeError::Unsupported),
-                    ..c
-                }
-            }
-        };
-
-        <span class="kw">return match </span><span class="self">self</span>.board.check_touches_piece(positions) {
+        <span class="kw">match </span><span class="self">self</span>.board.check_touches_piece(preview_cubes) {
             <span class="prelude-val">Ok</span>(cubes) =&gt; cubes
                 .iter()
-                .map(check_inbounds_no_collision)
-                .map(check_supported)
+                .map(|preview_cube| <span class="self">Self</span>::check_in_bounds_no_collision(<span class="self">self</span>, preview_cube))
+                .map(|preview_cube| <span class="self">Self</span>::check_cube_supported(<span class="self">self</span>, preview_cube, <span class="kw-2">&amp;</span>moved_piece))
                 .collect(),
             <span class="prelude-val">Err</span>(cubes) =&gt; cubes,
-        };
+        }
     }
 
     <span class="doccomment">/// Plays the selected piece if the previewed move is valid
@@ -280,6 +329,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
     <span class="kw">use crate</span>::{
+        board::CubeError,
         game_state::GameState,
         piece::PieceName,
         ts_interop::{Action, V3},
@@ -321,16 +371,36 @@
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>collision() {
+    </span><span class="kw">fn </span>test_supported_unsupported() {
         <span class="kw">let </span><span class="kw-2">mut </span>gs = GameState::default();
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
+
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::&lt;f32&gt;::new(<span class="number">0.0</span>, <span class="number">1.0</span>, <span class="number">0.0</span>))));
+
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(preview_piece) = <span class="kw-2">&amp;</span>gs.board_state.previewed_piece {
+            <span class="macro">assert!</span>(preview_piece
+                .iter()
+                .any(|c| c.error == <span class="prelude-val">Some</span>(CubeError::Unsupported)));
+        }
+    }
+
+    <span class="doccomment">/// attempts to place two pieces in the same position, should fail
+    </span><span class="attr">#[test]
+    </span><span class="kw">fn </span>collision() {
+        <span class="kw">let </span><span class="kw-2">mut </span>gs = GameState::default();
+
+        <span class="comment">// place piece
+        </span>gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
         gs.apply_action(Action::PreviewPiece(V3(Vector3::&lt;f32&gt;::new(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>))));
         gs.apply_action(Action::PlayPreviewedPiece);
-        gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
+
+        <span class="comment">//attempts to place another piece at the same position
+        </span>gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
         gs.apply_action(Action::PreviewPiece(V3(Vector3::&lt;f32&gt;::new(<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>))));
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(a) = <span class="kw-2">&amp;</span>gs.board_state.previewed_piece {
-            <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, a);
-            <span class="macro">assert!</span>(a.iter().any(|c| c.error.is_some()));
+
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(preivew_cubes) = <span class="kw-2">&amp;</span>gs.board_state.previewed_piece {
+            <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, preivew_cubes);
+            <span class="macro">assert!</span>(preivew_cubes.iter().any(|cube| cube.error.is_some()));
         }
     }
 }
