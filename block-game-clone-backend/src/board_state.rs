@@ -11,11 +11,13 @@ use crate::{
     piece::Piece,
     player::Player,
 };
-
+/// The state of the board, including move preview
 #[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
 #[ts(export, export_to = "pkg/types/BoardState.ts")]
 pub struct BoardState {
+    /// the current state of the board, available space, pieces that are in play
     pub board: Board,
+    /// used to show a player the result of a possible move, move validity
     pub previewed_piece: Option<Vec<Cube>>,
 }
 
@@ -37,6 +39,34 @@ impl BoardState {
             Some(self.check_piece_placement(current_player, piece.clone(), position));
     }
 
+    ///  performs in bounds and collision checks
+    ///
+    ///  returns copy with optional error embedded
+    fn check_in_bounds_no_collision(&self, preview_cube: &Cube) -> Cube {
+        Cube {
+            error: self
+                .board
+                .check_in_bounds_no_collision(preview_cube.position),
+            ..*preview_cube
+        }
+    }
+
+    /// Checks that a given cube of the potential play is supported either by a piece already in play or by another cube in the same piece
+    ///
+    /// adds CubeError::Unsupported if not
+    fn check_cube_supported(&self, preview_cube: Cube, moved_piece: &Piece) -> Cube {
+        if self.board.supports(&preview_cube.position)
+            || moved_piece.supports(&preview_cube.position)
+        {
+            preview_cube
+        } else {
+            Cube {
+                error: Some(CubeError::Unsupported),
+                ..preview_cube
+            }
+        }
+    }
+
     /// returns Vec of cubes with position and possible error information
     pub fn check_piece_placement(
         &self,
@@ -44,10 +74,10 @@ impl BoardState {
         piece: Piece,
         position: Vector3<f32>,
     ) -> Vec<Cube> {
-        //build the piece from the piece and position offset
+        // build the piece from the piece and position offset
         let moved_piece = piece.get_moved_copy(position);
 
-        let positions: Vec<Cube> = moved_piece
+        let preview_cubes: Vec<Cube> = moved_piece
             .coords
             .iter()
             .map(|v3| Cube {
@@ -57,30 +87,14 @@ impl BoardState {
             })
             .collect();
 
-        let check_inbounds_no_collision = |c: &Cube| Cube {
-            error: self.board.check_in_bounds_no_collision(c.position),
-            ..*c
-        };
-
-        let check_supported = |c: Cube| {
-            if self.board.supports(&c.position) || moved_piece.supports(&c.position) {
-                c
-            } else {
-                Cube {
-                    error: Some(CubeError::Unsupported),
-                    ..c
-                }
-            }
-        };
-
-        return match self.board.check_touches_piece(positions) {
+        match self.board.check_touches_piece(preview_cubes) {
             Ok(cubes) => cubes
                 .iter()
-                .map(check_inbounds_no_collision)
-                .map(check_supported)
+                .map(|preview_cube| Self::check_in_bounds_no_collision(self, preview_cube))
+                .map(|preview_cube| Self::check_cube_supported(self, preview_cube, &moved_piece))
                 .collect(),
             Err(cubes) => cubes,
-        };
+        }
     }
 
     /// Plays the selected piece if the previewed move is valid
@@ -112,6 +126,7 @@ impl BoardState {
 #[cfg(test)]
 mod tests {
     use crate::{
+        board::CubeError,
         game_state::GameState,
         piece::PieceName,
         ts_interop::{Action, V3},
@@ -153,16 +168,36 @@ mod tests {
     }
 
     #[test]
+    fn test_supported_unsupported() {
+        let mut gs = GameState::default();
+        gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
+
+        gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 1.0, 0.0))));
+
+        if let Some(preview_piece) = &gs.board_state.previewed_piece {
+            assert!(preview_piece
+                .iter()
+                .any(|c| c.error == Some(CubeError::Unsupported)));
+        }
+    }
+
+    /// attempts to place two pieces in the same position, should fail
+    #[test]
     fn collision() {
         let mut gs = GameState::default();
+
+        // place piece
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
+
+        //attempts to place another piece at the same position
         gs.apply_action(Action::SelectPiece(PieceName::OneByTwo));
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
-        if let Some(a) = &gs.board_state.previewed_piece {
-            println!("{:?}", a);
-            assert!(a.iter().any(|c| c.error.is_some()));
+
+        if let Some(preivew_cubes) = &gs.board_state.previewed_piece {
+            println!("{:?}", preivew_cubes);
+            assert!(preivew_cubes.iter().any(|cube| cube.error.is_some()));
         }
     }
 }
