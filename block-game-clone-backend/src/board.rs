@@ -1,3 +1,5 @@
+//! Contains [Board]
+
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,12 +10,15 @@ use crate::{
     player::{self, Player},
 };
 
+/// Represents the state of the board
 #[derive(Serialize, Deserialize, Debug, TS, Clone)]
 #[ts(export, export_to = "pkg/types/Board.ts")]
 pub struct Board {
     pub cells: [[[BoardCell; 8]; 8]; 8],
+    /// used to construct, show available space to player
     #[ts(type = "Array<Array<number>>")]
     pub height_limits: Vec<Vec<usize>>,
+    /// useful for centering a camera
     #[ts(type = "[number, number, number]")]
     pub center: Vector3<f32>,
 }
@@ -27,51 +32,77 @@ fn v3_to_index(v3: Vector3<f32>) -> Option<(usize, usize, usize)> {
 }
 
 impl Board {
-    pub fn new(game_mode: GameMode) -> Self {
-        match game_mode {
-            GameMode::Solitaire(_) => todo!(),
-            GameMode::TwoPlayer(TwoPlayerMap::Tower) => Board::new_tower(),
-            GameMode::TwoPlayer(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
-            GameMode::TwoPlayer(TwoPlayerMap::Stairs) => Board::new_corner(),
-            GameMode::TwoPlayer(TwoPlayerMap::Wall) => Board::new_wall(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Tower) => Board::new_tower(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Pyramid) => Board::new_pyramid(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Stairs) => Board::new_corner(),
-            GameMode::VSGreedyAI(TwoPlayerMap::Wall) => Board::new_wall(),
+    fn map_to_heights(map: TwoPlayerMap) -> Vec<Vec<usize>> {
+        match map {
+            TwoPlayerMap::Tower => vec![
+                vec![4, 4, 4, 4, 4],
+                vec![4, 4, 4, 4, 4],
+                vec![4, 4, 4, 4, 4],
+                vec![4, 4, 4, 4, 4],
+            ],
+            TwoPlayerMap::Pyramid => vec![
+                vec![1, 1, 1, 1, 1, 1, 1, 1],
+                vec![1, 2, 2, 2, 2, 2, 2, 1],
+                vec![1, 2, 3, 3, 3, 3, 2, 1],
+                vec![1, 2, 3, 4, 4, 3, 2, 1],
+                vec![1, 2, 3, 4, 4, 3, 2, 1],
+                vec![1, 2, 3, 3, 3, 3, 2, 1],
+                vec![1, 2, 2, 2, 2, 2, 2, 1],
+                vec![1, 1, 1, 1, 1, 1, 1, 1],
+            ],
+            TwoPlayerMap::Stairs => vec![
+                vec![1, 2, 3, 4, 5, 5, 5, 5],
+                vec![1, 2, 3, 4, 5, 5, 5, 5],
+                vec![1, 2, 3, 4, 5, 5, 5, 5],
+                vec![1, 2, 3, 4, 5, 5, 5, 5],
+            ],
+            TwoPlayerMap::Wall => vec![
+                vec![2, 2, 2, 2, 2, 2],
+                vec![2, 2, 2, 2, 2, 2],
+                vec![2, 2, 2, 2, 2, 2],
+                vec![0, 0, 0, 2, 2, 2],
+                vec![0, 0, 0, 2, 2, 2],
+                vec![0, 0, 0, 2, 2, 2],
+                vec![0, 0, 0, 2, 2, 2],
+                vec![0, 0, 0, 2, 2, 2],
+            ],
         }
     }
 
+    pub fn new(game_mode: GameMode) -> Self {
+        Self::new_board_from_2d_heights(match game_mode {
+            GameMode::Solitaire(_) => todo!(),
+            GameMode::TwoPlayer(map) => Self::map_to_heights(map),
+            GameMode::VSGreedyAI(map) => Self::map_to_heights(map),
+        })
+    }
+
     pub fn calculate_score(&self) -> HashMap<Player, i8> {
-        let highests: Vec<Vec<Option<Player>>> = self
+        let highests: Vec<Player> = self
             .height_limits
             .iter()
             .enumerate()
-            .map(|(x, row)| {
+            .flat_map(|(x, row)| {
                 row.iter()
                     .enumerate()
-                    .map(|(z, y_max)| self.get_highest_player(x as i8, z as i8, *y_max as i8))
-                    .collect()
+                    .filter_map(|(z, y_max)| {
+                        self.get_highest_player(x as i8, z as i8, *y_max as i8)
+                    })
+                    .collect::<Vec<_>>()
             })
             .collect();
 
-        let column_top_players = highests
-            .into_iter()
-            .flat_map(|a| a.into_iter())
-            .flatten()
-            .collect::<Vec<_>>();
+        let total = highests.len();
 
-        let p1s = column_top_players
-            .iter()
-            .filter(|item| item == &&Player::P1)
+        let p1s = highests
+            .into_iter()
+            .filter(|item| item == &Player::P1)
             .count();
 
-        let p2s = column_top_players.len() - p1s;
-
-        let a = HashMap::from([(Player::P1, p1s as i8), (Player::P2, p2s as i8)]);
-        println!("{:?}", a);
-        a
+        HashMap::from([(Player::P1, p1s as i8), (Player::P2, (total - p1s) as i8)])
     }
 
+    /// returns all available positions on the board. Used for searching for possible moves
     pub fn get_available_positions(&self) -> Vec<Vector3<f32>> {
         self.height_limits
             .iter()
@@ -80,13 +111,11 @@ impl Board {
                 row.iter()
                     .enumerate()
                     .flat_map(|(z, y_max)| {
-                        (0..=*y_max).filter_map(move |y| {
-                            match self.get(Vector3::new(x as f32, y as f32, z as f32)) {
-                                Some(&BoardCell::Empty) => {
-                                    Some(Vector3::new(x as f32, y as f32, z as f32))
-                                }
-                                _ => None,
+                        (0..=*y_max).filter_map(move |y| match self.get_from_index((x, y, z)) {
+                            Some(&BoardCell::Empty) => {
+                                Some(Vector3::new(x as f32, y as f32, z as f32))
                             }
+                            _ => None,
                         })
                     })
                     .collect::<Vec<_>>()
@@ -94,6 +123,7 @@ impl Board {
             .collect()
     }
 
+    /// Returns the highest player for a given column, used for scoring
     fn get_highest_player(&self, x: i8, z: i8, y_max: i8) -> Option<Player> {
         // for each pair (x,z) starting from height y and working downwards, find the first board cell that is owned by a player
         (0..y_max).rev().find_map(
@@ -104,46 +134,31 @@ impl Board {
         )
     }
 
-    pub fn get_from_index(&self, (x, y, z): (usize, usize, usize)) -> Option<&BoardCell> {
-        if let Some(bc) = self
-            .cells
+    fn get_from_index(&self, (x, y, z): (usize, usize, usize)) -> Option<&BoardCell> {
+        self.cells
             .get(x)
             .and_then(|b| b.get(y))
             .and_then(|c| c.get(z))
-        {
-            Some(bc)
-        } else {
-            None
-        }
     }
 
-    pub fn get_from_index_mut(
-        &mut self,
-        (x, y, z): (usize, usize, usize),
-    ) -> Option<&mut BoardCell> {
-        if let Some(bc) = self
-            .cells
+    fn get_from_index_mut(&mut self, (x, y, z): (usize, usize, usize)) -> Option<&mut BoardCell> {
+        self.cells
             .get_mut(x)
             .and_then(|b| b.get_mut(y))
             .and_then(|c| c.get_mut(z))
-        {
-            Some(bc)
-        } else {
-            None
-        }
     }
 
-    fn get_mut(&mut self, index: Vector3<f32>) -> Option<&mut BoardCell> {
-        if let Some((x, y, z)) = v3_to_index(index) {
-            self.get_from_index_mut((x, y, z))
-        } else {
-            None
-        }
-    }
-
-    fn get(&self, index: Vector3<f32>) -> Option<&BoardCell> {
+    pub fn get(&self, index: Vector3<f32>) -> Option<&BoardCell> {
         if let Some((x, y, z)) = v3_to_index(index) {
             self.get_from_index((x, y, z))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_mut(&mut self, index: Vector3<f32>) -> Option<&mut BoardCell> {
+        if let Some((x, y, z)) = v3_to_index(index) {
+            self.get_from_index_mut((x, y, z))
         } else {
             None
         }
@@ -180,38 +195,46 @@ impl Board {
         positions.iter().filter_map(|p| self.get(*p)).collect()
     }
 
-    pub fn check_touches_piece(&self, mut coords: Vec<Cube>) -> Result<Vec<Cube>, Vec<Cube>> {
-        let player = coords[0].player;
+    /// implements game rule requiring players to play touching their own piece.
+    ///
+    /// The first player may play anywhere. The second must touch the first
+    pub fn check_touches_piece(&self, new_piece_coords: Vec<Cube>) -> Result<Vec<Cube>, Vec<Cube>> {
+        let player = new_piece_coords[0].player;
 
+        // the first player can play anywhere, the second player mst touch the first, after this, all players must touch their own piece
         let player_to_check_for = self
             .player_has_played(player)
             .or(self.player_has_played(player.get_other()));
 
         if let Some(player) = player_to_check_for {
-            if coords
+            if new_piece_coords
                 .iter()
                 .flat_map(|p| self.get_adjacent_cells(&p.position))
                 .any(|bc| *bc == BoardCell::Player(player))
             {
-                Ok(coords)
+                Ok(new_piece_coords)
             } else {
-                for c in &mut coords {
-                    c.error = Some(CubeError::NotTouchingPiece)
-                }
-                Err(coords)
+                //embed error in all cubes
+                Err(new_piece_coords
+                    .iter()
+                    .map(|cube| Cube {
+                        error: Some(CubeError::NotTouchingPiece),
+                        ..*cube
+                    })
+                    .collect())
             }
         } else {
-            Ok(coords)
+            // neither player has played, free to play anywhere
+            Ok(new_piece_coords)
         }
     }
 
+    /// determines whether or not a player has played
     fn player_has_played(&self, player: Player) -> Option<Player> {
-        let mut all_indices = self
-            .cells
-            .iter()
-            .flat_map(|a| a.iter().flat_map(|b| b.iter()));
-        all_indices
-            .find(|bc| **bc == BoardCell::Player(player))
+        self.cells
+            .into_iter()
+            .flat_map(|a| a.into_iter().flat_map(|b| b.into_iter()))
+            .find(|bc| bc == &BoardCell::Player(player))
             .and(Some(player))
     }
 
@@ -257,59 +280,11 @@ impl Board {
             center: Vector3::<f32>::new(mid_x, mid_y, mid_z),
         }
     }
-
-    fn new_pyramid() -> Self {
-        let heights = vec![
-            vec![1, 1, 1, 1, 1, 1, 1, 1],
-            vec![1, 2, 2, 2, 2, 2, 2, 1],
-            vec![1, 2, 3, 3, 3, 3, 2, 1],
-            vec![1, 2, 3, 4, 4, 3, 2, 1],
-            vec![1, 2, 3, 4, 4, 3, 2, 1],
-            vec![1, 2, 3, 3, 3, 3, 2, 1],
-            vec![1, 2, 2, 2, 2, 2, 2, 1],
-            vec![1, 1, 1, 1, 1, 1, 1, 1],
-        ];
-        Self::new_board_from_2d_heights(heights)
-    }
-
-    fn new_tower() -> Self {
-        let heights = vec![
-            vec![4, 4, 4, 4, 4],
-            vec![4, 4, 4, 4, 4],
-            vec![4, 4, 4, 4, 4],
-            vec![4, 4, 4, 4, 4],
-        ];
-        Self::new_board_from_2d_heights(heights)
-    }
-
-    fn new_corner() -> Self {
-        let heights = vec![
-            vec![1, 2, 3, 4, 5, 5, 5, 5],
-            vec![1, 2, 3, 4, 5, 5, 5, 5],
-            vec![1, 2, 3, 4, 5, 5, 5, 5],
-            vec![1, 2, 3, 4, 5, 5, 5, 5],
-        ];
-        Self::new_board_from_2d_heights(heights)
-    }
-
-    fn new_wall() -> Self {
-        let heights = vec![
-            vec![2, 2, 2, 2, 2, 2],
-            vec![2, 2, 2, 2, 2, 2],
-            vec![2, 2, 2, 2, 2, 2],
-            vec![0, 0, 0, 2, 2, 2],
-            vec![0, 0, 0, 2, 2, 2],
-            vec![0, 0, 0, 2, 2, 2],
-            vec![0, 0, 0, 2, 2, 2],
-            vec![0, 0, 0, 2, 2, 2],
-        ];
-        Self::new_board_from_2d_heights(heights)
-    }
 }
 
 impl Default for Board {
     fn default() -> Self {
-        Self::new_tower()
+        Self::new_board_from_2d_heights(Self::map_to_heights(TwoPlayerMap::Tower))
     }
 }
 
@@ -362,7 +337,7 @@ pub enum BoardCell {
     OutOfBounds,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, TS)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, TS, PartialEq)]
 #[ts(export, export_to = "pkg/types/CubeError.ts")]
 pub enum CubeError {
     Collision,

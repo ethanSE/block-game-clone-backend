@@ -1,7 +1,4 @@
-use nalgebra::Vector3;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use ts_rs::TS;
+//! manages information about players
 
 use crate::{
     game_mode::GameMode,
@@ -10,12 +7,19 @@ use crate::{
     player_hand_state::PlayerHandState,
     ts_interop::RotationAxis,
 };
+use nalgebra::Vector3;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use ts_rs::TS;
 
+/// manages information about players
+///
+/// who is the current player, pieces in players' hands
 #[derive(Serialize, Deserialize, TS, Clone, Debug)]
 #[ts(export, export_to = "pkg/types/PlayerState.ts")]
-pub struct PlayerState {
-    pub current_player: Player,
-    pub players: HashMap<Player, PlayerHandState>,
+pub(crate) struct PlayerState {
+    pub(crate) current_player: Player,
+    pub(crate) players: HashMap<Player, PlayerHandState>,
 }
 
 impl Default for PlayerState {
@@ -82,7 +86,7 @@ impl PlayerState {
             .get(&self.current_player)
             .map(|p| p.get_selected_piece())
         {
-            Some(Some(piece)) => Some((self.current_player, piece.clone())),
+            Some(Some(piece)) => Some((self.current_player, piece)),
             _ => None,
         }
     }

@@ -7,10 +7,20 @@ use std::{
 };
 
 fn main() {
+    document();
     build_pkg();
     generate_ts_types();
     generate_index_file_for_ts_types();
     add_types_to_package_json();
+}
+
+fn document() {
+    let output = Command::new("cargo")
+        .current_dir("./block-game-clone-backend")
+        .args(["doc", "--document-private-items", "--no-deps"])
+        .output()
+        .expect("cargo doc failed");
+    println!("{:?}", output)
 }
 
 fn build_pkg() {
@@ -27,7 +37,7 @@ fn generate_ts_types() {
         .current_dir("./block-game-clone-backend")
         .args(["test", "-q"])
         .output()
-        .expect("failed to build with wasm-pack");
+        .expect("failed to test / generate ts types");
     println!("{:?}", output)
 }
 
