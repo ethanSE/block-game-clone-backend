@@ -2,8 +2,9 @@
 
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use ts_rs::TS;
+extern crate alloc;
+use alloc::{borrow::ToOwned, collections::BTreeMap, format, string::String, vec, vec::Vec};
 
 use crate::{
     board::{Board, Cube, CubeError},
@@ -118,7 +119,7 @@ impl BoardState {
     }
 
     /// Returns the current score
-    pub fn calculate_score(&self) -> HashMap<Player, i8> {
+    pub fn calculate_score(&self) -> BTreeMap<Player, i8> {
         self.board.calculate_score()
     }
 }

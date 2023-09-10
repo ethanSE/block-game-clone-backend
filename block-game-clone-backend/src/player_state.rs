@@ -9,8 +9,9 @@ use crate::{
 };
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use ts_rs::TS;
+extern crate alloc;
+use alloc::{borrow::ToOwned, collections::BTreeMap, format, string::String, vec, vec::Vec};
 
 /// manages information about players
 ///
@@ -19,7 +20,7 @@ use ts_rs::TS;
 #[ts(export, export_to = "pkg/types/PlayerState.ts")]
 pub(crate) struct PlayerState {
     pub(crate) current_player: Player,
-    pub(crate) players: HashMap<Player, PlayerHandState>,
+    pub(crate) players: BTreeMap<Player, PlayerHandState>,
 }
 
 impl Default for PlayerState {
@@ -33,8 +34,10 @@ impl PlayerState {
         Self {
             current_player: Player::default(),
             players: match game_mode {
-                GameMode::Solitaire(_) => HashMap::from([(Player::P1, PlayerHandState::default())]),
-                _ => HashMap::from([
+                GameMode::Solitaire(_) => {
+                    BTreeMap::from([(Player::P1, PlayerHandState::default())])
+                }
+                _ => BTreeMap::from([
                     (Player::P1, PlayerHandState::default()),
                     (Player::P2, PlayerHandState::default()),
                 ]),

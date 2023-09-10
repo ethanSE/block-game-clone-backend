@@ -1,11 +1,12 @@
 //! Contains [GameState] which represents the state of the game
 
+use alloc::collections::BTreeMap;
+use core::ops::Index;
 use itertools::Itertools;
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, ops::Index};
 use ts_rs::TS;
-
+extern crate alloc;
 use crate::{
     board_state::BoardState,
     game_mode::GameMode,
@@ -14,6 +15,7 @@ use crate::{
     player_state::PlayerState,
     ts_interop::{Action, RotationAxis, V3},
 };
+use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
 
 /// Represents the state of the game
 #[derive(Serialize, Deserialize, TS, Clone, Debug, Default)]
@@ -22,7 +24,7 @@ pub struct GameState {
     pub(crate) player_state: PlayerState,
     pub(crate) board_state: BoardState,
     pub(crate) game_mode: GameMode,
-    pub(crate) score: HashMap<Player, i8>,
+    pub(crate) score: BTreeMap<Player, i8>,
     pub(crate) game_ended: bool,
 }
 
@@ -33,8 +35,8 @@ impl GameState {
             player_state: PlayerState::new(game_mode),
             board_state: BoardState::new(game_mode),
             score: match game_mode {
-                GameMode::Solitaire(_) => HashMap::from([(Player::P1, 0)]),
-                _ => HashMap::from([(Player::P1, 0), (Player::P2, 0)]),
+                GameMode::Solitaire(_) => BTreeMap::from([(Player::P1, 0)]),
+                _ => BTreeMap::from([(Player::P1, 0), (Player::P2, 0)]),
             },
             game_ended: false,
         }
@@ -96,7 +98,6 @@ impl GameState {
     }
 
     fn pass_turn(&mut self) {
-        println!("turn passed");
         self.board_state.clear_previewed_piece();
         self.player_state.toggle_current_player();
         self.determine_game_ended();
@@ -187,7 +188,9 @@ mod tests {
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
 
-        let gs_str = serde_json::to_string(&gs).unwrap();
+        let gs_str = serde_json_core::to_string::<GameState, 100000>(&gs)
+            .unwrap()
+            .to_string();
         println!("{}", gs_str)
     }
 

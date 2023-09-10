@@ -19,9 +19,16 @@ ts-rs = "6.2"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-serde_json = "1.0.103"
-serde = { version = "1.0", features = ["derive"] }
-nalgebra = { version = "0.32.3", features = ["serde-serialize"] }
+serde-json-core = "0.5.1"
+serde = { version = "*", default-features = false, features = [
+    "alloc",
+    "derive",
+] }
+nalgebra = { version = "*", default-features = false, features = [
+    "alloc",
+    "libm",
+    "serde-serialize-no-std",
+] }
 itertools = "0.11.0"
 
 [dev-dependencies]

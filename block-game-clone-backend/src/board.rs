@@ -1,8 +1,9 @@
 //! Contains [Board]
 
+extern crate alloc;
+use alloc::{borrow::ToOwned, collections::BTreeMap, format, string::String, vec, vec::Vec};
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use ts_rs::TS;
 
 use crate::{
@@ -77,7 +78,7 @@ impl Board {
         })
     }
 
-    pub fn calculate_score(&self) -> HashMap<Player, i8> {
+    pub fn calculate_score(&self) -> BTreeMap<Player, i8> {
         let highests: Vec<Player> = self
             .height_limits
             .iter()
@@ -99,7 +100,7 @@ impl Board {
             .filter(|item| item == &Player::P1)
             .count();
 
-        HashMap::from([(Player::P1, p1s as i8), (Player::P2, (total - p1s) as i8)])
+        BTreeMap::from([(Player::P1, p1s as i8), (Player::P2, (total - p1s) as i8)])
     }
 
     /// returns all available positions on the board. Used for searching for possible moves
@@ -307,11 +308,6 @@ mod test {
         )));
 
         gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
-
-        // assert!(gs.score[&Player::P1] == 3);
-        // assert!(gs.score[&Player::P2] == 0);
-
-        println!("{}", serde_json::to_string(&gs).unwrap())
     }
 
     #[test]

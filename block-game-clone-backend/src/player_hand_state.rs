@@ -4,9 +4,11 @@ use crate::{
     piece::{Piece, PieceName},
     ts_interop::RotationAxis,
 };
+extern crate alloc;
+use alloc::collections::BTreeMap;
+use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use ts_rs::TS;
 
 /// represents the pieces in a players hand, their availability, and which (if any) piece is selected by the player
@@ -16,7 +18,7 @@ pub struct PlayerHandState {
     /// The piece currently selected by the player, if one is selected
     selected_piece: Option<PieceName>,
     /// The pieces in a player's hand. Pieces already played are represented by an Option::None
-    pieces: HashMap<PieceName, Option<Piece>>,
+    pieces: BTreeMap<PieceName, Option<Piece>>,
 }
 
 impl PlayerHandState {
@@ -92,7 +94,7 @@ impl Default for PlayerHandState {
     fn default() -> Self {
         Self {
             selected_piece: Default::default(),
-            pieces: HashMap::from([
+            pieces: BTreeMap::from([
                 (
                     PieceName::OneByTwo,
                     Some(Piece::from_vec_i8_array(vec![[0, 0, 0], [0, 0, 1]])),

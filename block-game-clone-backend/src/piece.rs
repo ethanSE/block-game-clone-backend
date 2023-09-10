@@ -1,11 +1,14 @@
 //! Contains [Piece], [PieceName]
+use core::f32::consts::PI;
+
 use itertools::Itertools;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
-use std::f32::consts::PI;
 use ts_rs::TS;
 
 use crate::ts_interop::RotationAxis;
+extern crate alloc;
+use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
 
 /// Represents a piece as a Vec of offsets as [`nalgebra::Vector3<f32>`] from [0,0,0]
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -103,7 +106,7 @@ impl Piece {
 }
 
 /// identifies pieces
-#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Copy, Clone, TS, Debug)]
+#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Copy, Clone, TS, Debug, PartialOrd, Ord)]
 #[ts(export, export_to = "pkg/types/PieceName.ts")]
 #[serde(rename_all = "snake_case")]
 pub enum PieceName {

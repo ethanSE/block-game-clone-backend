@@ -1,3 +1,4 @@
+#[cfg(std)]
 use std::{
     ffi::OsStr,
     fs::{self, File},
@@ -6,6 +7,10 @@ use std::{
     process::Command,
 };
 
+#[cfg(not(std))]
+fn main() {}
+
+#[cfg(std)]
 fn main() {
     document();
     build_pkg();
@@ -14,6 +19,7 @@ fn main() {
     add_types_to_package_json();
 }
 
+#[cfg(std)]
 fn document() {
     let output = Command::new("cargo")
         .current_dir("./block-game-clone-backend")
@@ -23,6 +29,7 @@ fn document() {
     println!("{:?}", output)
 }
 
+#[cfg(std)]
 fn build_pkg() {
     let output = Command::new("wasm-pack")
         .current_dir("./block-game-clone-backend")
@@ -32,6 +39,7 @@ fn build_pkg() {
     println!("{:?}", output)
 }
 
+#[cfg(std)]
 fn generate_ts_types() {
     let output = Command::new("cargo")
         .current_dir("./block-game-clone-backend")
@@ -41,6 +49,7 @@ fn generate_ts_types() {
     println!("{:?}", output)
 }
 
+#[cfg(std)]
 fn generate_index_file_for_ts_types() {
     println!("generating index file");
     let exports: Vec<_> = fs::read_dir("./block-game-clone-backend/pkg/types")
@@ -62,6 +71,7 @@ fn generate_index_file_for_ts_types() {
         .expect("failed to write to /pkg/types/index.ts");
 }
 
+#[cfg(std)]
 fn add_types_to_package_json() {
     let path = Path::new("./block-game-clone-backend/pkg/package.json");
     let contents = fs::read(path).expect("failed to read to bytes vec");

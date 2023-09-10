@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+extern crate alloc;
+use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
 
 /// Represents game mode and map
 #[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
