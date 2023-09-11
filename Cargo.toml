@@ -1,2 +1,3 @@
 [workspace]
 members = ["block-game-clone-backend", "build_automation"]
+default-members = ["block-game-clone-backend"]
