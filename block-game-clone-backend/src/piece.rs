@@ -160,7 +160,7 @@ mod tests {
 
         // dbg!(&z_piece);
 
-        let rotated_z_piece =
+        let _rotated_z_piece =
             z_piece.apply_rotation(Rotation3::from_axis_angle(&Vector3::x_axis(), PI));
 
         // dbg!(rotated_z_piece);

@@ -188,7 +188,7 @@ mod tests {
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
 
-        let gs_str = serde_json::to_string(&gs).unwrap();
+        let _gs_str = serde_json::to_string(&gs).unwrap();
         // println!("{}", gs_str)
     }
 
