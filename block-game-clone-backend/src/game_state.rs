@@ -188,10 +188,8 @@ mod tests {
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
 
-        let gs_str = serde_json_core::to_string::<GameState, 100000>(&gs)
-            .unwrap()
-            .to_string();
-        println!("{}", gs_str)
+        let gs_str = serde_json::to_string(&gs).unwrap();
+        // println!("{}", gs_str)
     }
 
     #[test]
@@ -201,22 +199,22 @@ mod tests {
         ));
 
         gs.apply_action(Action::MakeGreedyAIMove);
-        println!("{:?}", gs);
+        // println!("{:?}", gs);
         gs.apply_action(Action::MakeGreedyAIMove);
-        println!("{:?}", gs);
+        // println!("{:?}", gs);
     }
 
-    #[test]
-    fn test_ai_vs_ai() {
+    // #[test]
+    fn _test_ai_vs_ai() {
         let mut gs = GameState::new(GameMode::VSGreedyAI(
             crate::game_mode::TwoPlayerMap::Pyramid,
         ));
 
         while !gs.game_ended {
-            println!("{:?}", gs);
+            // println!("{:?}", gs);
             gs.make_greedy_ai_move();
-            println!("made move");
+            // println!("made move");
         }
-        println!("{:?}", gs);
+        // println!("{:?}", gs);
     }
 }

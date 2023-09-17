@@ -317,7 +317,7 @@ mod test {
         ));
 
         let score = b.calculate_score();
-        println!("{:?}", score);
+        // println!("{:?}", score);
         assert!(score.contains_key(&Player::P1));
         assert!(score.contains_key(&Player::P2));
     }

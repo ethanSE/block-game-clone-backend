@@ -1,4 +1,4 @@
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 //! # Block Game Clone Backend
 //!
 //! Implements game logic for [block_game_clone](https://github.com/ethanSE/block_game_clone)
@@ -16,4 +16,3 @@ pub mod player;
 pub mod player_hand_state;
 pub mod player_state;
 pub mod ts_interop;
-mod utils;

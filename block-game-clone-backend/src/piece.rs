@@ -125,8 +125,10 @@ pub enum PieceName {
 
 #[cfg(test)]
 mod tests {
-    use std::f32::consts::PI;
+    extern crate alloc;
+    use core::f32::consts::PI;
 
+    use alloc::vec;
     use nalgebra::{Rotation3, Vector3};
 
     use crate::piece::Piece;
@@ -156,11 +158,11 @@ mod tests {
     fn vec_rounding() {
         let z_piece = Piece::from_vec_i8_array(vec![[0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 2]]);
 
-        dbg!(&z_piece);
+        // dbg!(&z_piece);
 
         let rotated_z_piece =
             z_piece.apply_rotation(Rotation3::from_axis_angle(&Vector3::x_axis(), PI));
 
-        dbg!(rotated_z_piece);
+        // dbg!(rotated_z_piece);
     }
 }

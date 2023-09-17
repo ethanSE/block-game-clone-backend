@@ -197,7 +197,7 @@ mod tests {
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
 
         if let Some(preivew_cubes) = &gs.board_state.previewed_piece {
-            println!("{:?}", preivew_cubes);
+            // println!("{:?}", preivew_cubes);
             assert!(preivew_cubes.iter().any(|cube| cube.error.is_some()));
         }
     }
