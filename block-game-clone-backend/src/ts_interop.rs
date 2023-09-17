@@ -3,6 +3,7 @@
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+#[cfg(feature = "wasm-bindgen")]
 use wasm_bindgen::prelude::wasm_bindgen;
 extern crate alloc;
 use alloc::{
@@ -17,6 +18,7 @@ use serde_json;
 /// used for generating a new game from WASM
 ///
 /// Takes in a game mode as an &str
+#[cfg(feature = "wasm-bindgen")]
 #[wasm_bindgen]
 pub fn new_game(game_mode_str: &str) -> String {
     let game_mode = serde_json::from_str::<GameMode>(game_mode_str);
@@ -28,6 +30,7 @@ pub fn new_game(game_mode_str: &str) -> String {
 }
 
 /// Given a GameState and Action as &str's in WASM, returns the resulting GameState (as String)
+#[cfg(feature = "wasm-bindgen")]
 #[wasm_bindgen]
 pub fn next_game_state(current_state_s: &str, action_s: &str) -> String {
     let current_state = serde_json::from_str::<GameState>(current_state_s);
