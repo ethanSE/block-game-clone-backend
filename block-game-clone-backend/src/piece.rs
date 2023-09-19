@@ -63,7 +63,7 @@ impl Piece {
                 .map(|coord| {
                     let mut new_position = rotation * coord;
                     new_position.apply(|component| {
-                        *component = component.round();
+                        *component = nalgebra::ComplexField::round(*component);
                     });
                     new_position
                 })
