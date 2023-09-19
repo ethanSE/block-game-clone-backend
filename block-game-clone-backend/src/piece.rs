@@ -3,6 +3,7 @@ use core::f32::consts::PI;
 use itertools::Itertools;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
+use std::println;
 
 use crate::ts_interop::RotationAxis;
 
@@ -63,7 +64,7 @@ impl Piece {
                 .map(|coord| {
                     let mut new_position = rotation * coord;
                     new_position.apply(|component| {
-                        *component = component.round();
+                        *component = nalgebra::ComplexField::round(*component);
                     });
                     new_position
                 })
