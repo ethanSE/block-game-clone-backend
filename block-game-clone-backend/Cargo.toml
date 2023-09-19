@@ -15,7 +15,6 @@ ts-interop = ["dep:wasm-bindgen", "dep:ts-rs"]
 ts-rs = { version = "6.2", optional = true }
 wasm-bindgen = { version = "0.2.84", optional = true }
 
-# serde_json = { version = "*", default-features = false, features = ["alloc"] }
 serde = { version = "*", default-features = false, features = [
     "alloc",
     "derive",
