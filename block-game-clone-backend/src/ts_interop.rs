@@ -4,6 +4,7 @@ use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
 
 extern crate alloc;
+use crate::{game_mode::GameMode, game_state::GameState, piece::PieceName};
 use alloc::string::{String, ToString};
 
 #[cfg(feature = "ts-interop")]
@@ -46,7 +47,6 @@ pub fn next_game_state(current_state_s: &str, action_s: &str) -> String {
     }
 }
 
-use crate::{game_mode::GameMode, game_state::GameState, piece::PieceName};
 /// A newtype wrapper around a [`nalgebra::Vector3<f32>`]
 ///
 /// Allows for defining how the type should be serialized and deserialized as well as how the TypeScript type signature should be generated
