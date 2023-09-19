@@ -1,26 +1,36 @@
 //! Contains [Board]
 
 extern crate alloc;
-use alloc::{borrow::ToOwned, collections::BTreeMap, format, string::String, vec, vec::Vec};
+
+use alloc::{collections::BTreeMap, vec, vec::Vec};
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 
 use crate::{
     game_mode::{GameMode, TwoPlayerMap},
     player::{self, Player},
 };
 
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::{borrow::ToOwned, format, string::String},
+    ts_rs::TS,
+};
+
 /// Represents the state of the board
-#[derive(Serialize, Deserialize, Debug, TS, Clone)]
-#[ts(export, export_to = "pkg/types/Board.ts")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/Board.ts")
+)]
 pub struct Board {
     pub cells: [[[BoardCell; 8]; 8]; 8],
     /// used to construct, show available space to player
-    #[ts(type = "Array<Array<number>>")]
+    #[cfg_attr(feature = "ts-interop", ts(type = "Array<Array<number>>"))]
     pub height_limits: Vec<Vec<usize>>,
     /// useful for centering a camera
-    #[ts(type = "[number, number, number]")]
+    #[cfg_attr(feature = "ts-interop", ts(type = "[number, number, number]"))]
     pub center: Vector3<f32>,
 }
 
@@ -323,9 +333,13 @@ mod test {
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, PartialEq, TS, Clone, Copy)]
-#[ts(export, export_to = "pkg/types/BoardCell.ts")]
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq, Clone, Copy)]
 #[serde(tag = "type", content = "data")]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/BoardCell.ts")
+)]
 pub enum BoardCell {
     #[default]
     Empty,
@@ -333,8 +347,12 @@ pub enum BoardCell {
     OutOfBounds,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, TS, PartialEq)]
-#[ts(export, export_to = "pkg/types/CubeError.ts")]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/CubeError.ts")
+)]
 pub enum CubeError {
     Collision,
     Unsupported,
@@ -342,11 +360,15 @@ pub enum CubeError {
     NotTouchingPiece,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, TS)]
-#[ts(export, export_to = "pkg/types/Cube.ts")]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/Cube.ts")
+)]
 pub struct Cube {
     pub player: player::Player,
-    #[ts(type = "[number,number,number]")]
+    #[cfg_attr(feature = "ts-interop", ts(type = "[number,number,number]"))]
     pub position: Vector3<f32>,
     pub error: Option<CubeError>,
 }

@@ -1,20 +1,29 @@
 //! Contains [Piece], [PieceName]
 use core::f32::consts::PI;
-
 use itertools::Itertools;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 
 use crate::ts_interop::RotationAxis;
+
 extern crate alloc;
-use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
+
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::{borrow::ToOwned, format, string::String},
+    ts_rs::TS,
+};
 
 /// Represents a piece as a Vec of offsets as [`nalgebra::Vector3<f32>`] from [0,0,0]
-#[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[ts(export, export_to = "pkg/types/Piece.ts")]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/Piece.ts")
+)]
 pub struct Piece {
-    #[ts(type = "Array<[number,number,number]>")]
+    #[cfg_attr(feature = "ts-interop", ts(type = "Array<[number,number,number]>"))]
     pub coords: Vec<Vector3<f32>>,
 }
 
@@ -106,8 +115,12 @@ impl Piece {
 }
 
 /// identifies pieces
-#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Copy, Clone, TS, Debug, PartialOrd, Ord)]
-#[ts(export, export_to = "pkg/types/PieceName.ts")]
+#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Copy, Clone, Debug, PartialOrd, Ord)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/PieceName.ts")
+)]
 #[serde(rename_all = "snake_case")]
 pub enum PieceName {
     OneByTwo,

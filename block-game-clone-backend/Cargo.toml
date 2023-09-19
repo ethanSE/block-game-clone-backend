@@ -7,11 +7,15 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = []
+ts-interop = ["dep:wasm-bindgen", "dep:ts-rs"]
+
 [dependencies]
-ts-rs = "6.2"
+ts-rs = { version = "6.2", optional = true }
 wasm-bindgen = { version = "0.2.84", optional = true }
 
-serde_json = { version = "*", default-features = false, features = ["alloc"] }
+# serde_json = { version = "*", default-features = false, features = ["alloc"] }
 serde = { version = "*", default-features = false, features = [
     "alloc",
     "derive",
@@ -21,13 +25,14 @@ nalgebra = { version = "*", default-features = false, features = [
     "libm",
     "serde-serialize-no-std",
 ] }
-itertools = "0.11.0"
+
+itertools = { version = "0.11.0", default-features = false }
+serde-json-core = { version = "0.5.1", default-features = false, features = [
+    "heapless",
+] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
-
-[features]
-avif = ["dep:wasm-bindgen"]
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

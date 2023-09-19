@@ -2,9 +2,15 @@
 
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+
 extern crate alloc;
-use alloc::{borrow::ToOwned, collections::BTreeMap, format, string::String, vec, vec::Vec};
+use alloc::{collections::BTreeMap, vec::Vec};
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::vec,
+    alloc::{borrow::ToOwned, format, string::String},
+    ts_rs::TS,
+};
 
 use crate::{
     board::{Board, Cube, CubeError},
@@ -13,8 +19,12 @@ use crate::{
     player::Player,
 };
 /// The state of the board, including move preview
-#[derive(Serialize, Deserialize, Default, Debug, TS, Clone)]
-#[ts(export, export_to = "pkg/types/BoardState.ts")]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/BoardState.ts")
+)]
 pub struct BoardState {
     /// the current state of the board, available space, pieces that are in play
     pub board: Board,

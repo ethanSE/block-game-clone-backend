@@ -1,14 +1,21 @@
 //! Contains [GameMode]
 
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 extern crate alloc;
-use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec},
+    ts_rs::TS,
+};
 
 /// Represents game mode and map
-#[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(tag = "type", content = "data")]
-#[ts(export, export_to = "pkg/types/GameMode.ts")]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/GameMode.ts")
+)]
 pub enum GameMode {
     Solitaire(SolitaireMap),
     TwoPlayer(TwoPlayerMap),
@@ -21,14 +28,22 @@ impl Default for GameMode {
     }
 }
 
-#[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
 #[serde(tag = "type")]
-#[ts(export, export_to = "pkg/types/SolitaireMap.ts")]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/SolitaireMap.ts")
+)]
 pub enum SolitaireMap {
     FourByFiveByTwo,
 }
-#[derive(Serialize, Deserialize, TS, Clone, Copy, PartialEq, Eq, Debug)]
-#[ts(export, export_to = "pkg/types/TwoPlayerMap.ts")]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/TwoPlayerMap.ts")
+)]
 pub enum TwoPlayerMap {
     Tower,
     Pyramid,

@@ -5,8 +5,7 @@ use core::ops::Index;
 use itertools::Itertools;
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
-extern crate alloc;
+
 use crate::{
     board_state::BoardState,
     game_mode::GameMode,
@@ -15,11 +14,20 @@ use crate::{
     player_state::PlayerState,
     ts_interop::{Action, RotationAxis, V3},
 };
-use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
+extern crate alloc;
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec},
+    ts_rs::TS,
+};
 
 /// Represents the state of the game
-#[derive(Serialize, Deserialize, TS, Clone, Debug, Default)]
-#[ts(export, export_to = "pkg/types/GameState.ts")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/GameState.ts")
+)]
 pub struct GameState {
     pub(crate) player_state: PlayerState,
     pub(crate) board_state: BoardState,
@@ -188,7 +196,7 @@ mod tests {
         gs.apply_action(Action::PreviewPiece(V3(Vector3::<f32>::new(0.0, 0.0, 0.0))));
         gs.apply_action(Action::PlayPreviewedPiece);
 
-        let _gs_str = serde_json::to_string(&gs).unwrap();
+        let _gs_str = serde_json_core::to_string::<GameState, 20000>(&gs).unwrap();
         // println!("{}", gs_str)
     }
 

@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(feature = "ts-interop"), no_std)]
 //! # Block Game Clone Backend
 //!
 //! Implements game logic for [block_game_clone](https://github.com/ethanSE/block_game_clone)

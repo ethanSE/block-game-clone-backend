@@ -6,14 +6,23 @@ use crate::{
 };
 extern crate alloc;
 use alloc::collections::BTreeMap;
-use alloc::{borrow::ToOwned, format, string::String, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::{borrow::ToOwned, format, string::String},
+    ts_rs::TS,
+};
 
 /// represents the pieces in a players hand, their availability, and which (if any) piece is selected by the player
-#[derive(Serialize, Deserialize, TS, Clone, Debug)]
-#[ts(export, export_to = "pkg/types/PlayerHandState.ts")]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/PlayerHandState.ts")
+)]
 pub struct PlayerHandState {
     /// The piece currently selected by the player, if one is selected
     selected_piece: Option<PieceName>,

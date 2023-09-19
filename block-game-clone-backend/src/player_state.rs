@@ -9,15 +9,23 @@ use crate::{
 };
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+#[cfg(feature = "ts-interop")]
+use {
+    alloc::{borrow::ToOwned, format, string::String, vec},
+    ts_rs::TS,
+};
 extern crate alloc;
-use alloc::{borrow::ToOwned, collections::BTreeMap, format, string::String, vec, vec::Vec};
+use alloc::{collections::BTreeMap, vec::Vec};
 
 /// manages information about players
 ///
 /// who is the current player, pieces in players' hands
-#[derive(Serialize, Deserialize, TS, Clone, Debug)]
-#[ts(export, export_to = "pkg/types/PlayerState.ts")]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[cfg_attr(
+    feature = "ts-interop",
+    derive(TS),
+    ts(export, export_to = "pkg/types/PlayerState.ts")
+)]
 pub(crate) struct PlayerState {
     pub(crate) current_player: Player,
     pub(crate) players: BTreeMap<Player, PlayerHandState>,
