@@ -3,7 +3,6 @@ use core::f32::consts::PI;
 use itertools::Itertools;
 use nalgebra::{Rotation3, Vector3};
 use serde::{Deserialize, Serialize};
-use std::println;
 
 use crate::ts_interop::RotationAxis;
 
