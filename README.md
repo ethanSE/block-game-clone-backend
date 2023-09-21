@@ -10,6 +10,7 @@ This project contains the core game logic for https://github.com/ethanSE/block_g
 
 + Build automation for generating TypeScript types from Rust types for TS <-> Rust (as Wasm) interop in browser as strings
 
++ messing around with runnning on microcontroller
 ### Building Package (from project root)
 
 ```shell
