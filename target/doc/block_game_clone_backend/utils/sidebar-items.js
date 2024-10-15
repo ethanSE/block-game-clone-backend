@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["log","log_many","log_u32","set_panic_hook"]};
