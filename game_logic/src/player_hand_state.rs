@@ -2,7 +2,7 @@
 
 use crate::{
     piece::{Piece, PieceName},
-    ts_interop::RotationAxis,
+    rotation_axis::RotationAxis,
 };
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};

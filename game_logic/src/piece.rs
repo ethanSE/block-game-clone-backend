@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 use ts_rs::TS;
 
-use crate::ts_interop::RotationAxis;
+use crate::rotation_axis::RotationAxis;
 
 /// Represents a piece as a Vec of offsets as [`nalgebra::Vector3<f32>`] from [0,0,0]
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]

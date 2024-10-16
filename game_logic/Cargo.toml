@@ -1,5 +1,5 @@
 [package]
-name = "block-game-clone-backend"
+name = "game_logic"
 version = "0.1.35"
 edition = "2021"
 

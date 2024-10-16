@@ -7,12 +7,13 @@ use std::{collections::HashMap, ops::Index};
 use ts_rs::TS;
 
 use crate::{
+    action::{Action, V3},
     board_state::BoardState,
     game_mode::GameMode,
     piece::PieceName,
     player::Player,
     player_state::PlayerState,
-    ts_interop::{Action, RotationAxis, V3},
+    rotation_axis::RotationAxis,
 };
 
 /// Represents the state of the game
@@ -27,7 +28,7 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub(crate) fn new(game_mode: GameMode) -> Self {
+    pub fn new(game_mode: GameMode) -> Self {
         Self {
             game_mode,
             player_state: PlayerState::new(game_mode),
@@ -173,10 +174,10 @@ mod tests {
     use nalgebra::Vector3;
 
     use crate::{
+        action::{Action, V3},
         game_mode::GameMode,
         game_state::GameState,
         piece::PieceName,
-        ts_interop::{Action, V3},
     };
 
     #[test]

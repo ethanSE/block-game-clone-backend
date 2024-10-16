@@ -2,48 +2,54 @@ use std::{
     ffi::OsStr,
     fs::{self, File},
     io::Write,
+    panic,
     path::Path,
     process::Command,
 };
 
-fn main() {
-    document();
-    build_pkg();
-    generate_ts_types();
-    generate_index_file_for_ts_types();
-    add_types_to_package_json();
-}
+const BUILD_PROJECT: &str = "./build_wasm_ts_module";
+const GAME_LOGIC: &str = "./game_logic";
 
-fn document() {
-    let output = Command::new("cargo")
-        .current_dir("./block-game-clone-backend")
-        .args(["doc", "--document-private-items", "--no-deps"])
-        .output()
-        .expect("cargo doc failed");
-    println!("{:?}", output)
+fn main() {
+    let result = panic::catch_unwind(|| {
+        build_pkg();
+        generate_ts_types();
+        generate_index_file_for_ts_types();
+        add_types_to_package_json();
+        move_dir_to_build_wasm_bundle_project();
+    });
+
+    match result {
+        Ok(_) => {
+            println!(
+                "✅ Build automation suceeded! Package available at: {}/pkg",
+                BUILD_PROJECT
+            )
+        }
+        Err(e) => println!("{:?}", e),
+    }
 }
 
 fn build_pkg() {
-    let output = Command::new("wasm-pack")
-        .current_dir("./block-game-clone-backend")
+    Command::new("wasm-pack")
+        .current_dir(BUILD_PROJECT)
         .args(["build", "--target", "web"])
         .output()
         .expect("failed to build with wasm-pack");
-    println!("{:?}", output)
 }
 
 fn generate_ts_types() {
-    let output = Command::new("cargo")
-        .current_dir("./block-game-clone-backend")
+    Command::new("cargo")
+        .current_dir(GAME_LOGIC)
         .args(["test", "-q"])
         .output()
         .expect("failed to test / generate ts types");
-    println!("{:?}", output)
 }
 
 fn generate_index_file_for_ts_types() {
     println!("generating index file");
-    let exports: Vec<_> = fs::read_dir("./block-game-clone-backend/pkg/types")
+
+    let exports: Vec<_> = fs::read_dir(GAME_LOGIC.to_string() + "/pkg/types")
         .expect("failed to open pkg/types")
         .filter_map(Result::ok)
         .filter_map(|p| {
@@ -56,14 +62,15 @@ fn generate_index_file_for_ts_types() {
         .map(|f| format!("export * from \"./{}\"", f))
         .collect();
 
-    let mut file = File::create("./block-game-clone-backend/pkg/types/index.ts")
+    let mut file = File::create(GAME_LOGIC.to_string() + "/pkg/types/index.ts")
         .expect("failed to create /pkg/types/index.ts");
     file.write_all(exports.join("\n").as_bytes())
         .expect("failed to write to /pkg/types/index.ts");
 }
 
 fn add_types_to_package_json() {
-    let path = Path::new("./block-game-clone-backend/pkg/package.json");
+    let a = format!("{}/pkg/package.json", BUILD_PROJECT);
+    let path = Path::new(&a);
     let contents = fs::read(path).expect("failed to read to bytes vec");
 
     let mut pkg_json: serde_json::Value = serde_json::from_slice(&contents)
@@ -81,4 +88,16 @@ fn add_types_to_package_json() {
         serde_json::to_string_pretty(&pkg_json).unwrap().as_bytes(),
     )
     .expect("failed to write to package.json")
+}
+
+fn move_dir_to_build_wasm_bundle_project() {
+    if let Ok(true) = fs::exists(BUILD_PROJECT.to_string() + "/pkg/types") {
+        fs::remove_dir_all(BUILD_PROJECT.to_string() + "/pkg/types")
+            .expect(format!("failed to delete existing dir:  {}/pkg", BUILD_PROJECT).as_str());
+    }
+    fs::rename(
+        GAME_LOGIC.to_string() + "/pkg/types",
+        BUILD_PROJECT.to_string() + "/pkg/types",
+    )
+    .expect("failed to move pkg directory")
 }

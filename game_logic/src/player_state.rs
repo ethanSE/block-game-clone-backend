@@ -5,7 +5,7 @@ use crate::{
     piece::{Piece, PieceName},
     player::Player,
     player_hand_state::PlayerHandState,
-    ts_interop::RotationAxis,
+    rotation_axis::RotationAxis,
 };
 use nalgebra::Vector3;
 use serde::{Deserialize, Serialize};

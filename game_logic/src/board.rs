@@ -292,21 +292,21 @@ impl Default for Board {
 mod test {
     use nalgebra::Vector3;
 
-    use crate::{board_state::BoardState, game_state::GameState, player::Player, ts_interop::V3};
+    use crate::{action::V3, board_state::BoardState, game_state::GameState, player::Player};
 
     #[test]
     fn print() {
         let mut gs = GameState::default();
 
-        gs.apply_action(crate::ts_interop::Action::SelectPiece(
+        gs.apply_action(crate::action::Action::SelectPiece(
             crate::piece::PieceName::Corner,
         ));
 
-        gs.apply_action(crate::ts_interop::Action::PreviewPiece(V3(
+        gs.apply_action(crate::action::Action::PreviewPiece(V3(
             Vector3::<f32>::new(0.0, 0.0, 0.0),
         )));
 
-        gs.apply_action(crate::ts_interop::Action::PlayPreviewedPiece);
+        gs.apply_action(crate::action::Action::PlayPreviewedPiece);
 
         // assert!(gs.score[&Player::P1] == 3);
         // assert!(gs.score[&Player::P2] == 0);

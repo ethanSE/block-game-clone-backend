@@ -126,10 +126,10 @@ impl BoardState {
 #[cfg(test)]
 mod tests {
     use crate::{
+        action::{Action, V3},
         board::CubeError,
         game_state::GameState,
         piece::PieceName,
-        ts_interop::{Action, V3},
     };
     use nalgebra::Vector3;
 
