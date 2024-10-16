@@ -1,2 +1,2 @@
 [workspace]
-members = ["block-game-clone-backend", "build_automation"]
+members = ["game_logic", "build_wasm_ts_module"]

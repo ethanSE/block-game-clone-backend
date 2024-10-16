@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["Action","RotationAxis"],"fn":["new_game","next_game_state"],"struct":["V3"]};

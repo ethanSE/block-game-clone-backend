@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["add_types_to_package_json","build_pkg","document","generate_index_file_for_ts_types","generate_ts_types","main"]};
